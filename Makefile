@@ -10,20 +10,16 @@ build_nitrogen:
 
 nitrogen: nitrogen/bin/nitrogen
 
-nitrogen/bin/nitrogen:
-	tar xfz files/nitrogen-*
-	rm -rf nitrogen/site
+nitrogen/bin/nitrogen: build
+	cd build && tar xfz ../files/nitrogen-* && cd ..
+	rm -rf build/nitrogen/site
+	mv build/nitrogen/* nitrogen
+
+build:
+	mkdir build
 
 nitrogen/site:
 	ln -s ../site nitrogen/site
 
 run:
 	./scripts/argoctl
-
-clean: clean_site clean_nitrogen
-
-clean_site:
-	rm -f nitrogen/site
-	
-clean_nitrogen:
-	rm -rf nitrogen
