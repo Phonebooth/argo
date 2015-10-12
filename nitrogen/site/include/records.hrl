@@ -21,3 +21,15 @@
         micros :: integer(),
         result :: term()
     }).
+
+-record(app_chooser, {?ELEMENT_BASE(element_app_chooser),
+        apps=[] :: list()
+    }).
+
+-record(app_panel, {?ELEMENT_BASE(element_app_panel),
+        name :: list()
+    }).
+
+-record(cookie_input, {?ELEMENT_BASE(element_cookie_input),
+        node :: atom()
+    }).

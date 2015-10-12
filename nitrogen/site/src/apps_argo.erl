@@ -5,7 +5,7 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("records.hrl").
 
-main() -> security:main(fun() -> #template { file="./site/templates/bare.html" } end).
+main() -> #template { file="./site/templates/bare.html" }.
 
 title() -> "Hello from apps_argo.erl!".
 

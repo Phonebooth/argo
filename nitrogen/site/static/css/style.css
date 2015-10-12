@@ -57,3 +57,54 @@ a, a:visited {
 a:hover, a:active { 
     text-decoration: underline; 
 }
+
+.mainPanel {
+    margin: 0 auto;
+    width: 100%;
+}
+
+.contentPanel {
+    float: left;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.navPanel {
+    float: left;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.fillerPanel {
+    float: left;
+    width: 100%;
+    padding: 50px;
+}
+
+.fillerThinPanel {
+    float: left;
+    width: 100%;
+    padding: 10px;
+}
+
+.infoPanel {
+    float: left;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.cmdPanel {
+    float: left;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.appPanel {
+    float: left;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}

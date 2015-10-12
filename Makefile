@@ -17,13 +17,16 @@ ng-unpack:
 ng-build:
 	cd build/nitrogen/nitrogen-2.3.1 && make rel_webmachine PROJECT=argo
 	rm -rf build/nitrogen/argo/site
+	rm -rf build/nitrogen/argo/etc
 
 ng-put:
 	mv build/nitrogen/argo/* nitrogen
 
 ng-clean:
 	rm -rf build
-	find nitrogen -mindepth 1 -maxdepth 1 -not -name site -exec rm -rf "{}" \;
+	find nitrogen -mindepth 1 -maxdepth 1 \
+		-not -name site -and \
+		-not -name etc -exec rm -rf "{}" \;
 
 argo:
 	cd nitrogen && $(MAKE) all

@@ -6,7 +6,7 @@
 -author("Jesse Gumm (gumm@sigma-star.com)").
 
 main() ->
-    security:main(fun() -> #template { file="./site/templates/mobile.html" } end).
+    #template { file="./site/templates/mobile.html"}.
 
 title() -> "Nitrogen Web Framework - Mobile Sample".
 
