@@ -1,7 +1,7 @@
 .PHONY: all clean run clean_site clean_nitrogen argo build_nitrogen
 .INTERMEDIATE: nitrogen
 
-all: nitrogen nitrogen/site argo
+all: nitrogen argo
 
 argo: build_nitrogen
 
@@ -18,11 +18,9 @@ nitrogen/bin/nitrogen: build
 build:
 	mkdir build
 
-nitrogen/site:
-	ln -s ../site nitrogen/site
-
 run:
 	./scripts/argoctl
 
 clean:
+	find nitrogen -mindepth 1 -maxdepth 1 -not -name site -exec rm -rf "{}" \;
 	cd nitrogen && $(MAKE) clean
