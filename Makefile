@@ -23,3 +23,6 @@ nitrogen/site:
 
 run:
 	./scripts/argoctl
+
+clean:
+	cd nitrogen && $(MAKE) clean
