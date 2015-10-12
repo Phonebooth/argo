@@ -1,26 +1,35 @@
-.PHONY: all clean run clean_site clean_nitrogen argo build_nitrogen
-.INTERMEDIATE: nitrogen
+.PHONY: ng ng-download ng-unpack ng-build ng-put ng-clean
 
-all: nitrogen argo
+all: argo
 
-argo: build_nitrogen
+ng: ng-download ng-unpack ng-build ng-put
 
-build_nitrogen:
-	cd nitrogen && $(MAKE)
+ng-download:
+	mkdir -p build/nitrogen
+	wget --no-check-certificate \
+		-O build/nitrogen/nitrogen-2.3.1.tar.gz \
+		https://github.com/nitrogen/nitrogen/tarball/v2.3.1
 
-nitrogen: nitrogen/bin/nitrogen
+ng-unpack:
+	tar xfz build/nitrogen/nitrogen-2.3.1.tar.gz -C build/nitrogen
+	mv build/nitrogen/nitrogen-nitrogen* build/nitrogen/nitrogen-2.3.1
 
-nitrogen/bin/nitrogen: build
-	cd build && tar xfz ../files/nitrogen-* && cd ..
-	rm -rf build/nitrogen/site
-	mv build/nitrogen/* nitrogen
+ng-build:
+	cd build/nitrogen/nitrogen-2.3.1 && make rel_webmachine PROJECT=argo
+	rm -rf build/nitrogen/argo/site
 
-build:
-	mkdir build
+ng-put:
+	mv build/nitrogen/argo/* nitrogen
+
+ng-clean:
+	rm -rf build
+	find nitrogen -mindepth 1 -maxdepth 1 -not -name site -exec rm -rf "{}" \;
+
+argo:
+	cd nitrogen && $(MAKE) all
 
 run:
 	./scripts/argoctl
 
 clean:
-	find nitrogen -mindepth 1 -maxdepth 1 -not -name site -exec rm -rf "{}" \;
 	cd nitrogen && $(MAKE) clean
