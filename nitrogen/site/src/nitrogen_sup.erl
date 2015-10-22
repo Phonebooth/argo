@@ -25,5 +25,7 @@ init([]) ->
     application:start(crypto),
     application:start(nprocreg),
     application:start(simple_bridge),
+    ok = application:start(ibrowse),
+    ok = application:start(thumper),
 
     {ok, { {one_for_one, 5, 10}, [?CHILD(nitrogen_test_svr, worker)]} }.

@@ -1,6 +1,18 @@
 .PHONY: ng ng-download ng-unpack ng-build ng-put ng-clean
 
-all: argo
+PROJECT = argo
+
+DEPS_DIR = /home/jstimpson/argo/deps
+
+DEPS += pmod_transform
+DEPS += lager
+DEPS += thumper
+dep_thumper = git git@github.com:Phonebooth/thumper.git r16
+
+$(PROJECT).d:: deps
+	$(MAKE) -C deps/pmod_transform
+
+include erlang.mk
 
 ng: ng-download ng-unpack ng-build ng-put
 
@@ -28,11 +40,11 @@ ng-clean:
 		-not -name site -and \
 		-not -name etc -exec rm -rf "{}" \;
 
-argo:
-	cd nitrogen && $(MAKE) all
+$(PROJECT).d::
+	$(MAKE) -C nitrogen all DEPS_DIR="" REBAR_DEPS_DIR="" APPS_DIR=""
 
 run:
 	./scripts/argoctl
 
-clean:
-	cd nitrogen && $(MAKE) clean
+#clean:
+#	cd nitrogen && $(MAKE) clean

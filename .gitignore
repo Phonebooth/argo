@@ -15,3 +15,9 @@ nitrogen/bin
 nitrogen/erl_crash.dump
 nitrogen/Makefile
 nitrogen/plugins.config
+nitrogen/etc/thumper.config
+priv/certs
+build
+deps
+.erlang.mk
+argo.d

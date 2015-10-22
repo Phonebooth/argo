@@ -19,11 +19,21 @@
 ## Include .beam files for site.
 -pa ./site/ebin
 
+-pa ../deps/amqp_client/ebin
+-pa ../deps/goldrush/ebin
+-pa ../deps/ibrowse/ebin
+-pa ../deps/lager/ebin
+-pa ../deps/mochiweb/ebin
+-pa ../deps/pb2utils/ebin
+-pa ../deps/pmod_transform/ebin
+-pa ../deps/rabbit_common/ebin
+-pa ../deps/thumper/ebin
+
 ## Include libraries and rebar dependency paths
 -env ERL_LIBS ./lib
 
 ## Run code at startup.
--eval "application:start(nitrogen)"
+-eval "argo:start()"
 
 
 -setcookie V23sNtXg6j9d7VLXVw4p5UasTSIrTcbVecLtQcVnU74Fy0uviVUYr93r6vOvh
