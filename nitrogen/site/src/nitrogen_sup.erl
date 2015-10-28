@@ -22,10 +22,18 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+    lager:start(),
     application:start(crypto),
     application:start(nprocreg),
     application:start(simple_bridge),
     ok = application:start(ibrowse),
     ok = application:start(thumper),
+    ok = argo_db:init(),
 
-    {ok, { {one_for_one, 5, 10}, [?CHILD(nitrogen_test_svr, worker)]} }.
+    ets:new(global_comet_pools, [public, named_table]),
+    ets:new(app_reachability, [public, named_table]),
+
+    {ok, { {one_for_one, 5, 10},
+            [?CHILD(cortex_events_sup, supervisor),
+             ?CHILD(nitrogen_test_svr, worker)]
+        } }.

@@ -58,53 +58,102 @@ a:hover, a:active {
     text-decoration: underline; 
 }
 
-.mainPanel {
-    margin: 0 auto;
-    width: 100%;
+.clearfix {
+    overflow: auto;
 }
 
-.contentPanel {
-    float: left;
-    width: 100%;
-    margin: 0 auto;
+.wfid_index-head {
+    background-color: #66CCFF;
+    text-align: center;
+    border: 1px solid gray;
+    margin-bottom: 5px;
 }
 
-.navPanel {
-    float: left;
-    width: 100%;
-    margin: 0 auto;
+.wfid_index-nav {
+    height: 500px;
+}
+
+.wfid_index-host {
+    background-color: #F0F0F0;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.wfid_index-env {
+    background-color: linen;
+    border: 1px solid maroon;
+}
+
+.wfid_index-appnav {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.wfid_index-app {
+    background-color: linen;
+    border: 1px solid maroon;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.wfid_index-reachable {
+    background-color: linen;
+    border: 1px solid maroon;
+}
+
+.wfid_index-history {
+    background-color: #282828;
+    max-height: 200px;
+    overflow: auto;
+    border-radius: 3px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.wfid_index-footer {
+    background-color: linen;
+    border: 1px solid maroon;
     text-align: center;
 }
 
-.fillerPanel {
-    float: left;
-    width: 100%;
-    padding: 50px;
+.host-nav {
 }
 
-.fillerThinPanel {
-    float: left;
-    width: 100%;
-    padding: 10px;
+.argo-log {
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 0.75em;
+    color: #DDDDDD;
+    margin-top: 1px;
+    margin-bottom: 1px;
 }
 
-.infoPanel {
-    float: left;
-    width: 100%;
-    margin: 0 auto;
-    text-align: center;
+.appnav-item-reachable {
+    background-color: #CCFFFF;
+    color: black;
+    border: 1px solid black;
+    margin: 2px;
+    padding: 4px;
 }
 
-.cmdPanel {
-    float: left;
-    width: 100%;
-    margin: 0 auto;
-    text-align: center;
+.appnav-item-unreachable {
+    background-color: #E0E0E0;
+    color: #A0A0A0;
+    border: 1px solid #A0A0A0;
+    margin: 2px;
+    padding: 4px;
 }
 
-.appPanel {
-    float: left;
-    width: 100%;
-    margin: 0 auto;
-    text-align: center;
+.appnav-item-reachable:hover {
+    background-color: #EEFFFF;
+}
+
+.appnav-item-reachable:active {
+    background-color: #DDFFFF;
+}
+
+.app-eval {
+    width: 100%
 }

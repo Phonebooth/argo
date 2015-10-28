@@ -3,7 +3,7 @@
 -export([scheduler_utilization/1, term/3]).
 
 scheduler_utilization(Id) ->
-    term(scheduluer_utilization, all).
+    term(Id, scheduluer_utilization, all).
 
 term(Id, Callback, NodeDesc) ->
     [{id, Id},

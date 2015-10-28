@@ -32,6 +32,8 @@
 ## Include libraries and rebar dependency paths
 -env ERL_LIBS ./lib
 
+-mnesia dir '"/var/db/argo"'
+
 ## Run code at startup.
 -eval "argo:start()"
 

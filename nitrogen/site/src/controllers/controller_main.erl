@@ -3,11 +3,13 @@
 -export([accept/1, refresh_controllers/0]).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("../include/records.hrl").
+-include("argo.hrl").
 
 accept(Control=#control{}) ->
     handle_control(Control, controllers()).
 
-handle_control(#control{}, []) ->
+handle_control(C=#control{}, []) ->
+    ?PRINT(C),
     {error, controller_not_found};
 handle_control(Control=#control{}, [?MODULE|T]) ->
     handle_control(Control, T);
@@ -19,6 +21,7 @@ handle_control(Control=#control{}, [C|T]) ->
             ?PRINT({C, Control}),
             ok
         catch _:_ ->
+            ?LOG_ERR("~p", [erlang:get_stacktrace()]),
             handle_control(Control, T)
     end.
 

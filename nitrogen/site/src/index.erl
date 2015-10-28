@@ -9,27 +9,70 @@ main() ->
 
 title() -> "Welcome to Nitrogen".
 
-body() ->
-    #panel{id=main_panel, class="mainPanel", body=
-        [#panel{class="fillerPanel"},
-            #panel{class="contentPanel",
-                body=[
-                    #panel{id=info_panel, class="infoPanel",
-                        body=[#panel{id=info_text, body=info_text()}]},
-                    #panel{class="fillerThinPanel"},
-                    #panel{id=nav_panel, class="navPanel", body=nav()},
-                    #panel{class="fillerThinPanel"},
-                    #panel{id=app_panel, class="appPanel", body=[]}
-                ]},
-            #panel{class="fillerPanel"}
-        ]}.
+%content() ->
+%    #panel{body=[head(),
+%                 body()]}.
 
-info_text() -> "ARGO".
+content() ->
+    #container_16{
+        body=[#grid_16{omega=true, body=head()},
+              #grid_clear{},
+              #grid_4{alpha=true, body=[nav()]},
+              #grid_12{alpha=true, body=[host()]},
+              #grid_12{alpha=true, body=[history()]},
+              #grid_12{alpha=true, body=[app_nav()]},
+              #grid_12{alpha=true, body=[app()]},
+              #grid_clear{},
+              #grid_16{alpha=true, body=[footer()]}]
+          }.
+
+head() ->
+    #panel{id='index-head',
+        body=["<h1>ARGO</h1>"]}.
 
 nav() ->
-    {ok, Names} = net_adm:names(),
-    Apps = [ element_app_chooser:app(X) || {X,_} <- Names ],
-    #app_chooser{apps=Apps, target=app_panel}.
+    fill_nav(),
+    #grid_4{id='index-nav',
+        body=[#panel{body=["Hosts"]}]}.
+
+host() ->
+    #panel{id='index-host',
+        body=["host"]}.
+
+app_nav() ->
+    #panel{id='index-appnav',
+        body=["app nav"]}.
+
+app() ->
+    #panel{id='index-app',
+        body=["app"]}.
+
+history() ->
+    #panel{id='index-history',
+        body=[]}.
+
+footer() ->
+    #panel{id='index-footer',
+        body=["footer"]}.
+
+fill_nav() ->
+    wf:comet(fun() ->
+                case cortex_discovery:get_all(cortex_broker) of
+                    {ok, Hosts} ->
+                        [ cortex_events_sup:ensure_subscriber(X) || X <- Hosts ],
+                        [wf:insert_bottom('index-nav', #hostnav{host=X}) || X <- Hosts ],
+                        SelectHost = wf:session(select_host),
+                        case lists:member(wf:session(select_host), Hosts) of
+                            true ->
+                                controller_hostnav:select_host(SelectHost);
+                            _ ->
+                                wf:flush(),
+                                ok
+                        end;
+                    E ->
+                        ?PRINT(E)
+                end
+        end).
 
 event(Event=#control{}) ->
     ok = controller_main:accept(Event).

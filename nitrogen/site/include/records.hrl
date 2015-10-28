@@ -7,9 +7,24 @@
               f :: atom(),
               a :: list(),
               timeout = infinity :: atom() | integer()}).
--record(app, {name}).
+-record(app, {host, node}).
 
 % ELEMENTS
+-record(hostnav, {?ELEMENT_BASE(element_hostnav),
+        host :: any()
+    }).
+
+-record(history_item, {?ELEMENT_BASE(element_history_item),
+        type,
+        data
+    }).
+
+-record(appnav_item, {?ELEMENT_BASE(element_appnav_item),
+        host :: any(),
+        node :: any(),
+        reachability :: any()
+    }).
+
 -record(mfa_button, {?ELEMENT_BASE(element_mfa_button),
         confirm :: atom(),
         text :: list(),
@@ -30,7 +45,7 @@
     }).
 
 -record(app_panel, {?ELEMENT_BASE(element_app_panel),
-        name :: list()
+        app
     }).
 
 -record(cookie_input, {?ELEMENT_BASE(element_cookie_input),
