@@ -9,6 +9,17 @@
               timeout = infinity :: atom() | integer()}).
 
 % ELEMENTS
+-record(supervision_tree, {?ELEMENT_BASE(element_supervision_tree),
+        app,
+        depth=0,
+        root :: any(),
+        children :: any()
+    }).
+
+-record(supervisor_worker, {?ELEMENT_BASE(element_supervisor_worker),
+        worker_id, child, modules
+    }).
+
 -record(hostnav, {?ELEMENT_BASE(element_hostnav),
         host :: any()
     }).

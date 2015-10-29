@@ -18,7 +18,6 @@ handle_control(Control=#control{}, [C|T]) ->
         false ->
             handle_control(Control, T);
         _ ->
-            ?PRINT({C, Control}),
             ok
         catch X:Y ->
             ?LOG_ERR("~p:~p", [X, Y]),

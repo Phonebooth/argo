@@ -63,7 +63,6 @@ body {
  */
 .placeholders {
     margin-bottom: 30px;
-    text-align: center;
 }
 .placeholders h4 {
     margin-bottom: 0;
@@ -143,4 +142,11 @@ body {
 
 .app-eval {
     width: 100%
+}
+
+.sup-link-primary {
+    color: white;
+}
+
+.sup-link-default {
 }

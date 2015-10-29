@@ -19,7 +19,8 @@ render_element(_Record = #app_panel{app=App}) ->
         trigger=EvalId,
         target='app-eval-result'},
 
-    #panel{class="app-panel", body=[
+    fill_supervision_tree(App),
+    Render = #panel{class="app-panel", body=[
             App#app.node,
             #panel{class="clear"},
             #textbox{id=EvalId,
@@ -28,8 +29,16 @@ render_element(_Record = #app_panel{app=App}) ->
                 postback=EvalControl
             },
             #panel{class="clear"},
-            #panel{id='app-eval-result'}
+            #panel{id=supervision_tree}
         ]}.
+
+fill_supervision_tree(App) ->
+    wf:comet(fun() ->
+            Roots = supervision_tree_builder:find_roots(App),
+            Roots2 = [ supervision_tree_builder:empty(App, X, 0) || X <- Roots ],
+            wf:update(supervision_tree, Roots2),
+            wf:flush()
+    end).
 
 control(App) ->
     #control{module=?MODULE,
