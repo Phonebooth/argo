@@ -7,59 +7,12 @@
 main() ->
     #template { file="./site/templates/bare.html" }.
 
-title() -> "Welcome to Nitrogen".
+title() -> "Welcome to Argo".
 
-%content() ->
-%    #panel{body=[head(),
-%                 body()]}.
-
-content() ->
-    #container_16{
-        body=[#grid_16{omega=true, body=head()},
-              #grid_clear{},
-              #grid_4{alpha=true, body=[nav()]},
-              #grid_12{alpha=true, body=[host()]},
-              #grid_12{alpha=true, body=[history()]},
-              #grid_12{alpha=true, body=[app_nav()]},
-              #grid_12{alpha=true, body=[app()]},
-              #grid_clear{},
-              #grid_16{alpha=true, body=[footer()]}]
-          }.
-
-head() ->
-    #panel{id='index-head',
-        body=["<h1>ARGO</h1>"]}.
-
-nav() ->
-    fill_nav(),
-    #grid_4{id='index-nav',
-        body=[#panel{body=["Hosts"]}]}.
-
-host() ->
-    #panel{id='index-host',
-        body=["host"]}.
-
-app_nav() ->
-    #panel{id='index-appnav',
-        body=["app nav"]}.
-
-app() ->
-    #panel{id='index-app',
-        body=["app"]}.
-
-history() ->
-    #panel{id='index-history',
-        body=[]}.
-
-footer() ->
-    #panel{id='index-footer',
-        body=["footer"]}.
-
-fill_nav() ->
+sidebar() ->
     wf:comet(fun() ->
                 case cortex_discovery:get_all(cortex_broker) of
                     {ok, Hosts} ->
-                        [ cortex_events_sup:ensure_subscriber(X) || X <- Hosts ],
                         [wf:insert_bottom('index-nav', #hostnav{host=X}) || X <- Hosts ],
                         SelectHost = wf:session(select_host),
                         case lists:member(wf:session(select_host), Hosts) of
@@ -72,7 +25,31 @@ fill_nav() ->
                     E ->
                         ?PRINT(E)
                 end
-        end).
+        end),
+    #list{id='index-nav', class="nav nav-sidebar"}.
+
+content() ->
+    [host(),
+      #panel{class="row placeholders", body=[
+        history(),
+        app_nav(),
+        app()]}].
+
+host() ->
+    #h1{id='index-host', class="page-header", text="Host"}.
+
+app_nav() ->
+    #panel{id='index-appnav',
+        body=["app nav"]}.
+
+app() ->
+    #panel{id='index-app',
+        class="panel",
+        body=["app"]}.
+
+history() ->
+    #panel{id='index-history',
+        body=[]}.
 
 event(Event=#control{}) ->
     ok = controller_main:accept(Event).

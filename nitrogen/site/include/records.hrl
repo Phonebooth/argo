@@ -7,7 +7,6 @@
               f :: atom(),
               a :: list(),
               timeout = infinity :: atom() | integer()}).
--record(app, {host, node}).
 
 % ELEMENTS
 -record(hostnav, {?ELEMENT_BASE(element_hostnav),

@@ -3,7 +3,7 @@
 -export([
     start_link/0,
     init/1,
-    ensure_subscriber/1
+    ensure_subscriber/0
 ]).
 
 %% Helper macro for declaring children of supervisor
@@ -22,18 +22,21 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+    Broker = cortex_broker,
+    Name = list_to_atom(binary_to_list(iolist_to_binary([atom_to_list(Broker),".cortex_events"]))),
     {ok, { {one_for_one, 5, 10},
-            []
+            [?CHILD(cortex_command_registrar, worker),
+             spec(Name, Broker)]
         } }.
 
-ensure_subscriber(Host) ->
+ensure_subscriber() ->
     Broker = cortex_broker,
-    Name = subscriber_name(Broker, Host),
+    Name = subscriber_name(Broker),
     case is_subscriber_alive(Name) of
         true ->
             {Name, running};
         {false, deleted} ->
-            supervisor:start_child(?MODULE, spec(Name, Broker, Host)),
+            supervisor:start_child(?MODULE, spec(Name, Broker)),
             {Name, started};
         {false, terminated} ->
             supervisor:restart_child(?MODULE, Name),
@@ -55,20 +58,18 @@ is_subscriber_alive(Name) ->
             {false, {error, Error}}
     end.
 
-subscriber_name(Broker, Host) ->
+subscriber_name(Broker) ->
     list_to_atom(binary_to_list(iolist_to_binary([atom_to_list(Broker),".cortex_events"]))).
 
-spec(Name, Broker, Host) ->
+spec(Name, Broker) ->
     Exchange = <<"cortex.event">>,
-    Queue = queue_name(Host),
-    RK = routing_key(Host),
+    Queue = queue_name(),
+    RK = routing_key(),
     [{'queue.declare', QueueConfig}] = declare_queue(Queue),
     EventHandler = {cortex_event_handler, handle_event, [], []},
     ?SUB(Name, thumper, [Broker, Exchange, QueueConfig, RK, EventHandler]).
 
-queue_name(Host) when is_list(Host) ->
-    queue_name(iolist_to_binary(Host));
-queue_name(Host) when is_binary(Host) ->
+queue_name() ->
     {ok, MeHost} = inet:gethostname(),
     MeHostBin = iolist_to_binary(MeHost),
     <<"argo.", MeHostBin/binary, ".cortex.event">>.
@@ -77,5 +78,5 @@ declare_queue(Queue) ->
     [{'queue.declare', [{queue, Queue},
                         {durable, true}]}].
 
-routing_key(_Host) ->
+routing_key() ->
     <<"#">>.

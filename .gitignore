@@ -21,3 +21,11 @@ build
 deps
 .erlang.mk
 argo.d
+nitrogen/ibrowse
+nitrogen/meck
+nitrogen/mochiweb
+nitrogen/nitrogen_core
+nitrogen/nprocreg
+nitrogen/simple_bridge
+nitrogen/sync
+nitrogen/webmachine

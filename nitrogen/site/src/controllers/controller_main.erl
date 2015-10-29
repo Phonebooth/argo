@@ -20,7 +20,8 @@ handle_control(Control=#control{}, [C|T]) ->
         _ ->
             ?PRINT({C, Control}),
             ok
-        catch _:_ ->
+        catch X:Y ->
+            ?LOG_ERR("~p:~p", [X, Y]),
             ?LOG_ERR("~p", [erlang:get_stacktrace()]),
             handle_control(Control, T)
     end.

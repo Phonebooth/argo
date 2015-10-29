@@ -15,9 +15,7 @@ reflect() -> record_info(fields, hostnav).
 
 -spec render_element(#hostnav{}) -> body().
 render_element(_Record = #hostnav{host=Host}) ->
-    #panel{
-        class="host-nav",
-        body=[
+    #listitem{body=[
             #link{text=Host,
                 postback=#control{module=?MODULE,
                     target=none,

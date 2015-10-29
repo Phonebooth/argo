@@ -9,12 +9,23 @@ handle_event(_DT, RK, Payload) ->
     Term = binary_to_term(Payload),
     {ok, HistoryItem} = host_history:cortex_event(Term),
     #host_history{data=Data, host=Host} = HistoryItem,
-    case proplists:get_value(label, Data) of
+    Label = proplists:get_value(label, Data),
+    case Label of
         AppReachability when AppReachability =:= node_reachable orelse
                              AppReachability =:= node_unreachable ->
             notify_app_change(Host, AppReachability, Data);
         _ ->
             notify_history(HistoryItem)
+    end,
+
+    Value = proplists:get_value(value, Data),
+    case Label of
+        {running, CommandId} ->
+            cortex_command_registrar:recv(CommandId, running, Value);
+        {done, CommandId} ->
+            cortex_command_registrar:recv(CommandId, done, Value);
+        _ ->
+            ok
     end,
     ack.
 
@@ -23,10 +34,9 @@ notify_history(HistoryItem) ->
     Host = HistoryItem#host_history.host,
     case ets:lookup(global_comet_pools, {history, Host}) of
         [{_, PoolPid}] ->
-            ?LOG_DEBUG("found pool ~p", [PoolPid]),
             PoolPid ! HistoryItem;
         _ ->
-            ?LOG_DEBUG("no pool ~p", [Host])
+            ok
     end.
 
 notify_app_change(Host, Reachable, Data) ->
@@ -37,5 +47,5 @@ notify_app_change(Host, Reachable, Data) ->
         [{_, PoolPid}] ->
             PoolPid ! {Host, Reachable, Node, LastContactTime};
         _ ->
-            ?LOG_DEBUG("no appnav pool ~p", [Host])
+            ok
     end.

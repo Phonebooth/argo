@@ -97,7 +97,6 @@ fill_appnav(Host) ->
 loop_appnav(Host) ->
     receive
         {Host, Reachable, Node, LastContactTime} ->
-            ?LOG_DEBUG("~p ~p ~p ~p", [Host, Reachable, Node, LastContactTime]),
             ets:insert(app_reachability, {{Host, Node}, [{reachable, Reachable},
                         {last_contact_time, LastContactTime}]}),
             case wf:session(select_host) of
@@ -112,6 +111,34 @@ loop_appnav(Host) ->
     loop_appnav(Host).
 
 appnav_contents(Host) ->
+    case appnav_contents_(Host) of
+        [] ->
+            case probe_cortex_app_status(Host) of
+                ok ->
+                    appnav_contents_(Host);
+                _ ->
+                    []
+            end;
+        Apps ->
+            Apps
+    end.
+
+probe_cortex_app_status(Host) ->
+    Command = cortex_command:node_status_command(),
+    Key = cortex_command:send_command(Command, Host), 
+    case cortex_command:yield_command(Key, 2000) of
+        {ok, Nodes} ->
+            lists:map(fun({Node, ReachableBool, LastTimestamp}) ->
+                        Reachable = if ReachableBool -> node_reachable; true -> node_unreachable end,
+                        ets:insert(app_reachability, {{Host, Node}, [{reachable, Reachable},
+                                                                     {last_contact_time, LastTimestamp}]})
+                                                 end, Nodes),
+            ok;
+        E ->
+            E
+    end.
+
+appnav_contents_(Host) ->
     ets:foldl(fun({{AppHost, AppNode}, Data}, A) when AppHost =:= Host ->
                 Reachability = proplists:get_value(reachable, Data, node_unreachable),
                 [ #appnav_item{host=AppHost, node=AppNode, reachability=Reachability} | A ];

@@ -2,6 +2,7 @@
 %% vim: ts=4 sw=4 et
 -module (element_app_panel).
 -include_lib("nitrogen_core/include/wf.hrl").
+-include("argo.hrl").
 -include("records.hrl").
 -export([
     reflect/0,
