@@ -10,7 +10,10 @@
 
 % ELEMENTS
 -record(expand_listitem, {?ELEMENT_BASE(element_expand_listitem),
-        text,
+        state,
+        toshow_id,
+        link,
+        head = [],
         body
     }).
 -record(btn_group, {?ELEMENT_BASE(element_btn_group),

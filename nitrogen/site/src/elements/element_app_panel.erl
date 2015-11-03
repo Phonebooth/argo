@@ -20,20 +20,20 @@ render_element(_Record = #app_panel{app=App}) ->
         target='app-eval-result'},
 
     fill_supervision_tree(App),
-    #panel{class="app-panel", body=[
+    #panel{class="app-panel", body=#panel{class="row", body=[
             #list{class="nav nav-sidebar", body=[
-                    #expand_listitem{text="eval", body=[
+                    #expand_listitem{link="eval", body=[
                             #textbox{id=EvalId,
                                 class="app-eval",
                                 text="erlang:now().",
                                 postback=EvalControl
                             }
                         ]},
-                    #expand_listitem{text="supervision tree", body=[
-                                    #panel{id=supervision_tree}
-                        ]}
+                    #expand_listitem{link="supervision tree", body=#panel{class="col-sm-11 col-1-offset", body=[
+                                    #list{id=supervision_tree}
+                                ]}}
                 ]}
-        ]}.
+        ]}}.
 
 fill_supervision_tree(App) ->
     wf:comet(fun() ->

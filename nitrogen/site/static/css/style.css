@@ -156,3 +156,7 @@ body {
 .toshow {
     display: none;
 }
+
+.supervision-tree {
+    border: 1px solid #eee;
+}
