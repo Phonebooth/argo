@@ -15,7 +15,7 @@ handle_event(_DT, RK, Payload) ->
                              AppReachability =:= node_unreachable ->
             notify_app_change(Host, AppReachability, Data);
         _ ->
-            notify_history(HistoryItem)
+            host_history:write(HistoryItem)
     end,
 
     Value = proplists:get_value(value, Data),
@@ -28,16 +28,6 @@ handle_event(_DT, RK, Payload) ->
             ok
     end,
     ack.
-
-notify_history(HistoryItem) ->
-    host_history:write(HistoryItem),
-    Host = HistoryItem#host_history.host,
-    case ets:lookup(global_comet_pools, {history, Host}) of
-        [{_, PoolPid}] ->
-            PoolPid ! HistoryItem;
-        _ ->
-            ok
-    end.
 
 notify_app_change(Host, Reachable, Data) ->
     Value = proplists:get_value(value, Data),

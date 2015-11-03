@@ -18,9 +18,7 @@ select_host(Host) ->
     wf:session(select_host, Host),
     wf:session(select_app, undefined),
     wf:update('index-host', Host),
-    wf:update('index-history', ""),
     wf:flush(),
-    fill_history(Host),
     wf:update('index-appnav', 
         #panel{body=[
                 #appnav_item{host=Host,
@@ -30,23 +28,6 @@ select_host(Host) ->
     wf:flush(),
     fill_appnav(Host),
     wf:update('index-app', "load tasks").
-
-fill_history(Host) ->
-    wf:comet(fun() ->
-                case host_history:get_history(Host) of
-                    [] ->
-                        wf:update('index-history', "No history"),
-                        wf:flush();
-                    History when is_list(History) ->
-                        BufferLen = 100,
-                        NTail = lists:max([0, length(History) - BufferLen]),
-                        insert_history('index-history', lists:nthtail(NTail, History));
-                    _ ->
-                        ok
-                end,
-                register_for_global_events({history, Host},
-                    fun() -> loop_history(Host) end)
-        end).
 
 register_for_global_events(PoolId, LoopFun) ->
     case wf:session({comet_global, PoolId}) of
@@ -58,28 +39,6 @@ register_for_global_events(PoolId, LoopFun) ->
     end,
     {ok, PoolPid} = action_comet:get_pool_pid(undefined, PoolId, global),
     ets:insert(global_comet_pools, {PoolId, PoolPid}).
-
-insert_history(Id, []) ->
-    auto_scroll(Id),
-    ok;
-insert_history(Id, [#host_history{type=Type, data=Data}|T]) ->
-    wf:insert_bottom(Id, history_data(Type, Data)),
-    wf:flush(),
-    insert_history(Id, T).
-
-history_data(Type, Data) ->
-    #history_item{type=Type, data=Data}.
-
-loop_history(Host) ->
-    receive
-        #host_history{host=Host, type=Type, data=Data} ->
-            wf:insert_bottom('index-history', history_data(Type, Data)),
-            wf:flush(),
-            auto_scroll('index-history');
-        _ ->
-            ok
-    end,
-    loop_history(Host).
 
 auto_scroll(Id) ->
     wf:wire(Id, #event{type=timer,

@@ -20,16 +20,19 @@ render_element(_Record = #app_panel{app=App}) ->
         target='app-eval-result'},
 
     fill_supervision_tree(App),
-    Render = #panel{class="app-panel", body=[
-            App#app.node,
-            #panel{class="clear"},
-            #textbox{id=EvalId,
-                class="app-eval",
-                text="erlang:now().",
-                postback=EvalControl
-            },
-            #panel{class="clear"},
-            #panel{id=supervision_tree}
+    #panel{class="app-panel", body=[
+            #list{class="nav nav-sidebar", body=[
+                    #expand_listitem{text="eval", body=[
+                            #textbox{id=EvalId,
+                                class="app-eval",
+                                text="erlang:now().",
+                                postback=EvalControl
+                            }
+                        ]},
+                    #expand_listitem{text="supervision tree", body=[
+                                    #panel{id=supervision_tree}
+                        ]}
+                ]}
         ]}.
 
 fill_supervision_tree(App) ->

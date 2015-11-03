@@ -9,6 +9,36 @@
               timeout = infinity :: atom() | integer()}).
 
 % ELEMENTS
+-record(expand_listitem, {?ELEMENT_BASE(element_expand_listitem),
+        text,
+        body
+    }).
+-record(btn_group, {?ELEMENT_BASE(element_btn_group),
+        body :: list()
+    }).
+-record(eventlog, {?ELEMENT_BASE(element_eventlog),
+        attr1 :: any(),
+        attr2 :: any()
+    }).
+
+-record(btn_eventlog, {?ELEMENT_BASE(element_btn_eventlog),
+        target
+    }).
+
+-record(logfile_chart, {?ELEMENT_BASE(element_logfile_chart),
+        attr1 :: any(),
+        attr2 :: any()
+    }).
+
+-record(btn_drop, {?ELEMENT_BASE(element_btn_drop),
+        label,
+        links
+    }).
+
+-record(glyphicon, {?ELEMENT_BASE(element_glyphicon),
+        name :: atom() | list()
+    }).
+
 -record(supervision_tree, {?ELEMENT_BASE(element_supervision_tree),
         app,
         depth=0,
@@ -17,6 +47,7 @@
     }).
 
 -record(supervisor_worker, {?ELEMENT_BASE(element_supervisor_worker),
+        app, supervisor,
         worker_id, child, modules
     }).
 
@@ -26,6 +57,7 @@
 
 -record(history_item, {?ELEMENT_BASE(element_history_item),
         type,
+        timestamp,
         data
     }).
 

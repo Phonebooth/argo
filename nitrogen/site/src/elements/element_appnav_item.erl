@@ -16,14 +16,8 @@ reflect() -> record_info(fields, appnav_item).
 render_element(_Record = #appnav_item{host=Host,
     node=Node,
     reachability=Reachable}) ->
-    {Class, Disabled} = case Reachable of
-        node_reachable ->
-            {"appnav-item-reachable", false};
-        node_unreachable ->
-            {"appnav-item-unreachable", true}
-    end,
-    #button{class=Class,
-        disabled=Disabled,
+    #button{class="btn btn-default btn-xs",
+        disabled=Reachable =:= node_unreachable,
         text=Node,
         postback=#control{module=?MODULE,
             target='index-app',

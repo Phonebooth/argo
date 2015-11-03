@@ -20,15 +20,10 @@ render_element(_Record = #supervision_tree{app=App, depth=D, root=Root, children
     Event = #event{target=BodyId, type=click},
 
     {PanelStyle, LinkStyle} = panel_styles(D),
-    #panel{id=Root, class="panel " ++ PanelStyle, body=[
-            #panel{class="panel-heading", body=[
-                    #panel{style="float: left;", body=Root},
-                    #panel{style="margin-left: 200px;", body=[
-                        #link{class=LinkStyle, text="show", actions=Event#event{actions=#show{}}},
-                        " | ",
-                        #link{class=LinkStyle, text="hide", actions=Event#event{actions=#hide{}}}
-                        ]}
-                ]},
+    #panel{id=Root, class="panel " ++ PanelStyle ++ " nopadding", body=[
+        #panel{class="panel-heading", body=[
+                #link{class=LinkStyle, text=Root, actions=Event#event{actions=#toggle{}}}
+            ]},
         #panel{id=BodyId, class="panel-body", body=
             render_children(App, Root, D, Children)}
     ]}.
@@ -46,11 +41,12 @@ vis_button(Btn) ->
 render_children(App, Root, D, undefined) ->
     Id = Root,
     [#panel{body=[
-                #button{text="query",
+                #button{class="btn btn-default",
+                    text="which_children",
                     postback=#control{
                         module=?MODULE,
                         target=Id,
                         model={App, Root, D}}}
             ]}];
 render_children(_App, _Root, D, Children) ->
-    [#panel{body=[X]} || X <- Children].
+    #list{class="list-group", body=Children}.

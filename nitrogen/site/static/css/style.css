@@ -97,13 +97,10 @@ body {
     border: 1px solid maroon;
 }
 
-.wfid_index-history {
-    background-color: #282828;
-    max-height: 200px;
+.terminal {
+    background-color: rgba(40, 40, 40, 0.8);
+    max-height: 320px;
     overflow: auto;
-    border-radius: 3px;
-    margin-top: 5px;
-    margin-bottom: 5px;
     text-align: left;
 }
 
@@ -149,4 +146,13 @@ body {
 }
 
 .sup-link-default {
+}
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.toshow {
+    display: none;
 }

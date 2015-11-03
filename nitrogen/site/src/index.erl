@@ -3,6 +3,7 @@
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("../include/records.hrl").
+-include("db.hrl").
 
 main() ->
     #template { file="./site/templates/bare.html" }.
@@ -28,10 +29,20 @@ sidebar() ->
         end),
     #list{id='index-nav', class="nav nav-sidebar"}.
 
+navbar() ->
+    #panel{id=navbar, class="navbar-collapse collapse",
+        body=#list{class="nav navbar-nav navbar-right",
+            body=[
+                #listitem{body=#btn_eventlog{target='index-history'}}
+%   <form class="navbar-form navbar-right">
+%        <input type="text" class="form-control" placeholder="Search...">
+%   </form>
+            ]}
+    }.
+
 content() ->
     [host(),
       #panel{class="row placeholders", body=[
-        history(),
         app_nav(),
         app()]}].
 
@@ -48,9 +59,7 @@ app() ->
         body=["app"]}.
 
 history() ->
-    #panel{id='index-history',
-        body=[]}.
+    #eventlog{id='index-history'}.
 
 event(Event=#control{}) ->
     ok = controller_main:accept(Event).
-

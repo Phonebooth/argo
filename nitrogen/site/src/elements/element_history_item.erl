@@ -12,10 +12,9 @@
 reflect() -> record_info(fields, history_item).
 
 -spec render_element(#history_item{}) -> body().
-render_element(_Record = #history_item{type=_Type, data=Data}) ->
+render_element(_Record = #history_item{type=_Type, timestamp=Timestamp, data=Data}) ->
     Label = proplists:get_value(label, Data),
     _DataType = proplists:get_value(type, Data),
-    Timestamp = proplists:get_value(timestamp, Data),
     Node = proplists:get_value(node, Data),
     Value = case proplists:get_value(value, Data) of
         undefined ->

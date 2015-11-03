@@ -32,7 +32,8 @@ build(App=#app{}, Supervisor, Depth) ->
                 ({Id, _Child, supervisor, _Modules}) ->
                     #supervision_tree{app=App, depth=Depth+1, root=Id, children=undefined};
                 ({Id, Child, worker, Modules}) ->
-                    #supervisor_worker{worker_id=Id, child=Child, modules=Modules}
+                    #supervisor_worker{app=App, supervisor=Supervisor,
+                        worker_id=Id, child=Child, modules=Modules}
             end, Children2)}.
 
 sort_children(Children) ->
