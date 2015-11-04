@@ -44,7 +44,12 @@ $(PROJECT).d::
 	$(MAKE) -C nitrogen all DEPS_DIR="" REBAR_DEPS_DIR="" APPS_DIR=""
 
 run:
-	./scripts/argoctl
+	./scripts/argoctl console
+
+run_start:
+	./scripts/argoctl start
 
 #clean:
 #	cd nitrogen && $(MAKE) clean
+#
+#

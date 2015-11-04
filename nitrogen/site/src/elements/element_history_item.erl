@@ -5,7 +5,8 @@
 -include("records.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    term/1
 ]).
 
 -spec reflect() -> [atom()].

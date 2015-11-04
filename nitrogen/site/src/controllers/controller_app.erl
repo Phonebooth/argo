@@ -6,10 +6,12 @@
 -include("records.hrl").
 
 accept(#control{module=element_app_panel,
+                target=Target,
                 trigger=eval,
                 model=App=#app{}}) ->
     EvalString = wf:q(eval),
-    cortex_command:blocking_mfa(string_to_mfa(EvalString), App, 10000),
+    Result = cortex_command:blocking_mfa(string_to_mfa(EvalString), App, 10000),
+    wf:update(Target, iolist_to_binary(element_history_item:term(Result))),
     ok;
 
 accept(_) -> false.
