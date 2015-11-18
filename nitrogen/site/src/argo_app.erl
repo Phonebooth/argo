@@ -1,4 +1,4 @@
--module(nitrogen_app).
+-module(argo_app).
 -behaviour(application).
 -export([start/2, stop/1]).
 
@@ -7,7 +7,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    nitrogen_sup:start_link().
+    argo_sup:start_link().
 
 stop(_State) ->
     ok.
