@@ -1,23 +1,113 @@
 %% Include the automatically generated plugins directory
 -include("plugins.hrl").
 
-%% Include any application-specific custom elements, actions, or validators below
+% MODELS
+-record(mfa, {node :: atom(),
+              m :: atom(),
+              f :: atom(),
+              a :: list(),
+              timeout = infinity :: atom() | integer()}).
+
+% ELEMENTS
+-record(expand_listitem, {?ELEMENT_BASE(element_expand_listitem),
+        state,
+        toshow_id,
+        link,
+        head = [],
+        body
+    }).
+-record(btn_group, {?ELEMENT_BASE(element_btn_group),
+        body :: list()
+    }).
+-record(eventlog, {?ELEMENT_BASE(element_eventlog),
+        attr1 :: any(),
+        attr2 :: any()
+    }).
+
+-record(btn_eventlog, {?ELEMENT_BASE(element_btn_eventlog),
+        target
+    }).
+
+-record(logfile_chart, {?ELEMENT_BASE(element_logfile_chart),
+        attr1 :: any(),
+        attr2 :: any()
+    }).
+
+-record(btn_drop, {?ELEMENT_BASE(element_btn_drop),
+        label,
+        links
+    }).
+
+-record(glyphicon, {?ELEMENT_BASE(element_glyphicon),
+        name :: atom() | list()
+    }).
+
+-record(supervision_tree, {?ELEMENT_BASE(element_supervision_tree),
+        app,
+        depth=0,
+        root :: any(),
+        children :: any()
+    }).
+
+-record(supervisor_worker, {?ELEMENT_BASE(element_supervisor_worker),
+        app, supervisor,
+        worker_id, child, modules
+    }).
+
+-record(hostnav, {?ELEMENT_BASE(element_hostnav),
+        host :: any()
+    }).
+
+-record(history_item, {?ELEMENT_BASE(element_history_item),
+        type,
+        timestamp,
+        data
+    }).
+
+-record(appnav_item, {?ELEMENT_BASE(element_appnav_item),
+        host :: any(),
+        node :: any(),
+        reachability :: any()
+    }).
+
 -record(mfa_button, {?ELEMENT_BASE(element_mfa_button),
         confirm :: atom(),
         text :: list(),
-        node :: atom(),
-        m :: atom(),
-        f :: atom(),
-        a :: list(),
-        timeout = infinity :: atom() | integer(),
+        mfa :: any(),
         result_id :: atom()
     }).
 
 -record(mfa_result, {?ELEMENT_BASE(element_mfa_result),
         human_timestamp :: list(),
-        m :: atom(),
-        f :: atom(),
-        a :: list(),
+        mfa :: any(),
         micros :: integer(),
         result :: term()
     }).
+
+-record(app_chooser, {?ELEMENT_BASE(element_app_chooser),
+        target :: any(),
+        apps=[] :: list()
+    }).
+
+-record(app_panel, {?ELEMENT_BASE(element_app_panel),
+        app
+    }).
+
+-record(cookie_input, {?ELEMENT_BASE(element_cookie_input),
+        node :: atom()
+    }).
+
+-record(supervisor_child, {?ELEMENT_BASE(element_supervisor_child),
+        node :: atom(),
+        parent :: any(),
+        name :: any(),
+        pid :: atom() | pid(),
+        type :: any(),
+        s_module :: any()
+    }).
+
+% CONTROLS
+-record(control, {module :: atom(),
+                  trigger :: any(),
+                  target :: any(),
+                  model :: any()}).

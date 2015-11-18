@@ -3,57 +3,165 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 
 /***** STYLE *****/
 
-body { 
-    font-family: "Lucida Grande", "Segoe UI", Tahoma, Helvetica, Arial, sans-serif; 
-    font-size: 16px;
-    line-height: 32px;
+/* Bootstrap */
+/* Move down content because we have a fixed navbar that is 50px tall */
+body {
+    padding-top: 50px;
+  }
+
+/*
+ * Global add-ons
+ */
+.sub-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
 }
 
-.container_12 {
-    margin-top: 40px;
+/*
+ * Top navigation
+ * Hide default border to remove 1px line.
+ */
+.navbar-fixed-top {
+    border: 0;
+  }
+
+/* Sidebar navigation */
+.nav-sidebar {
+    margin-right: -21px; /* 20px padding + 1px border */
+    margin-bottom: 20px;
+    margin-left: -20px;
+  }
+.nav-sidebar > li > a {
+      padding-right: 20px;
+      padding-left: 20px;
+}
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus {
+    color: #fff;
+    background-color: #428bca;
 }
 
-h1 {
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    padding-bottom: 7px;
-    border-bottom: dashed 1px #DDD;
-    text-transform: uppercase;
-    font-size: 1.875em;
-    line-height: 1.066667em;
-    margin-top: 1.6em;
-    margin-bottom: 1.6em;
+/*
+ * Main content
+ */
+.main {
+    padding: 20px;
+}
+@media (min-width: 768px) {
+    .main {
+        padding-right: 40px;
+        padding-left: 40px;
+            }
+}
+.main .page-header {
+    margin-top: 0;
 }
 
-h2 {
-    font-family: Arial, sans-serif;
-    font-size: 1.5em;
-    line-height: 1.333333em;
-    margin-top: 1.6em;
-    margin-bottom: 1.6em;
+/*
+ * Placeholder dashboard ideas
+ */
+.placeholders {
+    margin-bottom: 30px;
+}
+.placeholders h4 {
+    margin-bottom: 0;
+}
+.placeholder {
+      margin-bottom: 20px;
+}
+.placeholder img {
+    display: inline-block;
+    border-radius: 50%;
 }
 
-h3 {
-    font-family: Arial, sans-serif;
-    font-size: 1.25em;
-    line-height: 1.6em;
-    margin-top: 1.333333em;
-    margin-bottom: 1.333333em;
+.wfid_index-env {
+    background-color: linen;
+    border: 1px solid maroon;
 }
 
-p {
-    font-size: 1em;
-    line-height: 2em;
-    margin-top: 2em;
-    margin-bottom: 2em;
+.wfid_index-appnav {
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
-
-a, a:visited { 
-    color: #4488FF
-    text-decoration: none; 
+.wfid_index-app {
+    background-color: linen;
+    border: 1px solid maroon;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
-a:hover, a:active { 
-    text-decoration: underline; 
+.wfid_index-reachable {
+    background-color: linen;
+    border: 1px solid maroon;
+}
+
+.terminal {
+    background-color: rgb(40, 40, 40);
+    max-height: 320px;
+    overflow: auto;
+    text-align: left;
+    padding: 5px;
+}
+
+.argo-log {
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 0.75em;
+    color: #DDDDDD;
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+.appnav-item-reachable {
+    background-color: #CCFFFF;
+    color: black;
+    border: 1px solid black;
+    margin: 2px;
+    padding: 4px;
+}
+
+.appnav-item-unreachable {
+    background-color: #E0E0E0;
+    color: #A0A0A0;
+    border: 1px solid #A0A0A0;
+    margin: 2px;
+    padding: 4px;
+}
+
+.appnav-item-reachable:hover {
+    background-color: #EEFFFF;
+}
+
+.appnav-item-reachable:active {
+    background-color: #DDFFFF;
+}
+
+.app-eval {
+    width: 100%
+}
+
+.sup-link-primary {
+    color: white;
+}
+
+.sup-link-default {
+}
+
+.nopadding {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.toshow {
+    display: none;
+}
+
+.supervision-tree {
+    border: 1px solid #eee;
+}
+
+.eval-panel {
+    max-width: 600px;
 }

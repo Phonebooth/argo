@@ -1,0 +1,41 @@
+
+## Name of the nitrogen node
+-sname argo
+
+## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
+## (Disabled by default..use with caution!)
+##-heart
+
+## Enable kernel poll and a few async threads
++K true
++A 5
+
+## Increase number of concurrent ports/sockets
+-env ERL_MAX_PORTS 4096
+
+## Tweak GC to run more often 
+-env ERL_FULLSWEEP_AFTER 10
+
+## Include .beam files for site.
+-pa ./site/ebin
+
+-pa ../deps/amqp_client/ebin
+-pa ../deps/goldrush/ebin
+-pa ../deps/ibrowse/ebin
+-pa ../deps/lager/ebin
+-pa ../deps/mochiweb/ebin
+-pa ../deps/pb2utils/ebin
+-pa ../deps/pmod_transform/ebin
+-pa ../deps/rabbit_common/ebin
+-pa ../deps/thumper/ebin
+
+## Include libraries and rebar dependency paths
+-env ERL_LIBS ./lib
+
+-mnesia dir '"/var/db/argo"'
+
+## Run code at startup.
+-eval "argo:start()"
+
+
+-setcookie V23sNtXg6j9d7VLXVw4p5UasTSIrTcbVecLtQcVnU74Fy0uviVUYr93r6vOvh

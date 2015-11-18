@@ -16,27 +16,25 @@ render_element(#mfa_result{human_timestamp=undefined}) ->
     ?DEBUG,
     "waiting";
 render_element(#mfa_result{human_timestamp=H,
-                           m=M,
-                           f=F,
-                           a=A,
+                           mfa=Mfa,
                            micros=undefined,
                            result=undefined}) ->
     ?DEBUG,
     [
             "at " ++ H ++ ":" ++ 
             "<pre><code>" ++
-            mfa_string(M, F, A) ++
+            mfa_string(Mfa) ++
             "</code></pre>"
         ];
 render_element(#mfa_result{human_timestamp=H,
-                           m=M, f=F, a=A,
+                           mfa=Mfa,
                            micros=Micros,
                            result=Result}) ->
     ?DEBUG,
     [
             "at " ++ H ++ ":" ++ 
             "<pre><code>" ++
-            mfa_string(M, F, A) ++
+            mfa_string(Mfa) ++
             "</code></pre>",
             #br{},
             "finished " ++ integer_to_list(Micros) ++
@@ -46,7 +44,7 @@ render_element(#mfa_result{human_timestamp=H,
             "</code></pre>"
         ].
 
-mfa_string(M, F, A) ->
+mfa_string(#mfa{m=M,f=F,a=A}) ->
     AStr = [ io_lib:format("~p", [X]) || X <- A ],
     AStr2 = string:join(AStr, ", "),
     atom_to_list(M) ++ ":" ++ atom_to_list(F) ++ "( " ++ AStr2 ++ " ).".
