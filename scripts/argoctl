@@ -1,7 +1,0 @@
-#!/bin/bash
-function main() {
-    local command="$1"
-    nitrogen/bin/nitrogen "$command"
-}
-
-main "$@"

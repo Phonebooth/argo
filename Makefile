@@ -21,6 +21,10 @@ run:
 run_start:
 	./scripts/argoctl start
 
+build:
+	rm -rf $(PROJECT)-$(BUILD_ENV)-$(BUILD_ID).tar.gz
+	tar cvfz $(PROJECT)-$(BUILD_ENV)-$(BUILD_ID).tar.gz -X build.exclude *
+
 #clean:
 #	cd nitrogen && $(MAKE) clean
 #
