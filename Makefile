@@ -1,4 +1,4 @@
-.PHONY: 
+.PHONY: build
 
 PROJECT = argo
 
