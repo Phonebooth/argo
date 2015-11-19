@@ -21,7 +21,8 @@ create_and_start() ->
                         ok ->
                             ok;
                         {error, {Node, {already_exists, Node}}} ->
-                            {atomic, ok} = mnesia:change_table_copy_type(schema, node(), disc_copies);
+                            {atomic, ok} = mnesia:change_table_copy_type(schema, node(), disc_copies),
+                            ok;
                         {error, Error} ->
                             {error, Error}
                     end;
