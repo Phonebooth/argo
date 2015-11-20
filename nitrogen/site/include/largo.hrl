@@ -1,0 +1,2 @@
+-compile([{parse_transform, lager_transform}]).
+-define(ARGO(Level, Format, Args), lager:Level([{module, ?MODULE}], Format, Args)).

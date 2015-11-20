@@ -29,3 +29,8 @@ nitrogen/nprocreg
 nitrogen/simple_bridge
 nitrogen/sync
 nitrogen/webmachine
+.argo
+.eclair
+eclair.tar
+eclair.erl
+eclair
