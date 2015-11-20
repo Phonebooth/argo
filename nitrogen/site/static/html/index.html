@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to Argo!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to the Argo login page!</h1>
+<p>Argo requires public key authentication.</p>
+<p><pre><code>function argo-login {
+    # Creates a background ssh tunnel listening
+    # locally onport 8000 and forwarding on the
+    # remote host to port 8000
+
+    ssh -L 127.0.0.1:8000:127.0.0.1:8000 argo-qa-aws01.phoneboothdev.info -Nf
+}
+
+function argo-logout {
+    kill $(ps -ef | grep [a]rgo-qa-aws01.phoneboothdev.info | awk '{print $2}')
+}</code></pre></p>
+    <p>Once you've logged in, continue via your secure argo tunnel:<br/><a href="http://localhost:8000">http://localhost:8000</a></p>
+</body>
+</html>
