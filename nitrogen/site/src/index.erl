@@ -42,9 +42,8 @@ navbar() ->
 
 content() ->
     [host(),
-      #panel{class="row placeholders", body=[
-        app_nav(),
-        app()]}].
+     app_nav(),
+     app()].
 
 host() ->
     #h1{id='index-host', class="page-header", text="Host"}.
@@ -55,7 +54,6 @@ app_nav() ->
 
 app() ->
     #panel{id='index-app',
-        class="panel",
         body=["app"]}.
 
 history() ->

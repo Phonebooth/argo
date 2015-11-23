@@ -4,3 +4,6 @@
 -define(LOG_ERR(Format, Args),  error_logger:error_msg(Format, Args)).
 
 -record(app, {host, node}).
+
+-record(run_func, {arity, vars=[]}).
+-record(run_var, {name, guards=[]}).

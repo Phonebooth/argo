@@ -2,7 +2,7 @@
 
 -export([mfa/3, blocking_mfa/3, async_mfa/2, yield_mfa/2, publish/2]).
 -export([send_command/2, send_command/3, yield_command/2]).
--export([node_status_command/0]).
+-export([node_status_command/0, discover_commands_command/0, make_run_command/3]).
 
 -include("argo.hrl").
 
@@ -52,6 +52,13 @@ mfa(Mfa, #app{node=Node, host=Host}, RecvPid) ->
 node_status_command() ->
     [{command, {cortex_local, node_status}},
      {command_id, argo_db:uuid()}].
+
+discover_commands_command() ->
+    [{command, {cortex_local, discover_commands}},
+     {command_id, argo_db:uuid()}].
+
+make_run_command(#app{node=Node}, CommandName, Args) ->
+    new_command({CommandName, run, Args}, Node).
 
 new_command(Callback, NodeDesc) ->
     [{command, Callback},

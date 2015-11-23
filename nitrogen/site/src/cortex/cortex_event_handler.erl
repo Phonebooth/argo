@@ -3,6 +3,7 @@
 -export([handle_event/3]).
 
 -include("argo.hrl").
+-include("largo.hrl").
 -include("db.hrl").
 
 handle_event(_DT, RK, Payload) ->
@@ -25,8 +26,10 @@ handle_event(_DT, RK, Payload) ->
             Value = proplists:get_value(value, Data),
             case Label of
                 {running, CommandId} ->
+                    ?ARGO(debug, "running command ~p", [CommandId]),
                     cortex_command_registrar:recv(CommandId, running, Value);
                 {done, CommandId} ->
+                    ?ARGO(debug, "done command ~p ~p", [CommandId, Value]),
                     cortex_command_registrar:recv(CommandId, done, Value);
                 _ ->
                     ok

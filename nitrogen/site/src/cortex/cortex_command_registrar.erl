@@ -18,6 +18,8 @@
 -record(state, {
 }).
 
+-include("largo.hrl").
+
 %% API.
 
 -spec start_link() -> {ok, pid()}.
@@ -43,8 +45,10 @@ handle_call({register, [CommandId, Pid]}, _From, State) ->
     case ets:lookup(?MODULE, CommandId) of
         [{_, _, {result, Result}}] ->
             Pid ! {CommandId, done, Result},
+            ?ARGO(debug, "removing command id ~p", [CommandId]),
             ets:delete(?MODULE, CommandId);
         _ ->
+            ?ARGO(debug, "inserting command id ~p", [CommandId]),
             ets:insert(?MODULE, {CommandId, Pid, {no_result, []}})
     end,
     {reply, ok, State};
@@ -54,12 +58,14 @@ handle_call({recv, [CommandId, done, Data]}, _From, State) ->
             Pid ! {CommandId, done, Data},
             true;
         [{_,Ref,_}] ->
+            ?ARGO(debug, "inserting command id ~p", [CommandId]),
             ets:insert(?MODULE, {CommandId, Ref, {result, Data}}),
             false;
         _ ->
             true
     end,
     if Sent ->
+            ?ARGO(debug, "removing command id ~p", [CommandId]),
             ets:delete(?MODULE, CommandId);
         true ->
             ok
@@ -69,6 +75,7 @@ handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
 
 handle_cast({unregister, [CommandId]}, State) ->
+    ?ARGO(debug, "removing command id ~p", [CommandId]),
     ets:delete(?MODULE, CommandId),
     {noreply, State};
 handle_cast(_Msg, State) ->

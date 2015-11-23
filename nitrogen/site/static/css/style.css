@@ -80,18 +80,6 @@ body {
     border: 1px solid maroon;
 }
 
-.wfid_index-appnav {
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
-.wfid_index-app {
-    background-color: linen;
-    border: 1px solid maroon;
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
 .wfid_index-reachable {
     background-color: linen;
     border: 1px solid maroon;

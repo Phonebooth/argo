@@ -9,6 +9,30 @@
               timeout = infinity :: atom() | integer()}).
 
 % ELEMENTS
+-record(input_group_btn_drop, {?ELEMENT_BASE(element_input_group_btn_drop),
+        label,
+        links,
+        textbox
+    }).
+
+-record(modal, {?ELEMENT_BASE(element_modal),
+        modal_id,
+        label,
+        modal_title,
+        body
+    }).
+-record(btn_launch_modal, {?ELEMENT_BASE(element_btn_launch_modal),
+        target,
+        body
+    }).
+
+-record(command, {?ELEMENT_BASE(element_command),
+        app,
+        name,
+        details,
+        body
+    }).
+
 -record(expand_listitem, {?ELEMENT_BASE(element_expand_listitem),
         state,
         toshow_id,

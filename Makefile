@@ -16,10 +16,7 @@ $(PROJECT).d::
 	$(MAKE) -C nitrogen all DEPS_DIR="" REBAR_DEPS_DIR="" APPS_DIR=""
 
 run:
-	./scripts/argoctl console
-
-run_start:
-	./scripts/argoctl start
+	./nitrogen/bin/nitrogen console
 
 build:
 	rm -rf $(PROJECT)-$(BUILD_ENV)-$(BUILD_ID).tar.gz

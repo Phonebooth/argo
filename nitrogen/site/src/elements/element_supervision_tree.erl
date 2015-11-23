@@ -16,6 +16,8 @@ reflect() -> record_info(fields, supervision_tree).
 -spec render_element(#supervision_tree{}) -> body().
 render_element(_Record = #supervision_tree{app=App, depth=D, root=Root, children=Children}) ->
     TempId = wf:temp_id(),
+    ChildrenState = children_state(Children),
+    LinkEnabled = ChildrenState =:= exist,
     #expand_listitem{
         id=Root,
         class="supervision-tree",
@@ -23,8 +25,8 @@ render_element(_Record = #supervision_tree{app=App, depth=D, root=Root, children
         toshow_id=TempId,
         head=#panel{class="row",
             body=[
-                #panel{class="col-sm-1 text-center", body=supervisor_icon(Children)},
-                #panel{class="col-sm-2", body=element_expand_listitem:make_link(TempId, Root)},
+                #panel{class="col-sm-1 text-center", body=supervisor_icon(ChildrenState)},
+                #panel{class="col-sm-2", body=element_expand_listitem:make_link(TempId, Root, LinkEnabled)},
                 #panel{class="col-sm-1 text-center", body=actions(App, Root, D, Children)}
             ]},
         body=#list{
@@ -33,11 +35,15 @@ render_element(_Record = #supervision_tree{app=App, depth=D, root=Root, children
             }
     }.
 
+children_state(undefined) -> undefined;
+children_state([]) -> empty;
+children_state(_) -> exist.
+
 supervisor_icon(undefined) ->
     glyph:icon('question-sign');
-supervisor_icon([]) ->
+supervisor_icon(empty) ->
     glyph:icon('eye-close');
-supervisor_icon(_) ->
+supervisor_icon(exist) ->
     glyph:icon('eye-open').
 
 actions(App, Root, D, _Children) ->

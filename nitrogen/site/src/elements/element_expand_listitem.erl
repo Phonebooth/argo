@@ -6,7 +6,7 @@
 -export([
     reflect/0,
     render_element/1,
-    make_link/2
+    make_link/3
 ]).
 
 
@@ -27,13 +27,15 @@ class(expand) -> "";
 class(_) -> "toshow".
 
 clickable(Id, Link, undefined) ->
-    make_link(Id, Link);
+    make_link(Id, Link, true);
 clickable(Id, Link, []) ->
-    make_link(Id, Link);
+    make_link(Id, Link, true);
 clickable(_Id, _, Head) ->
     Head.
 
-make_link(Id, Link) ->
+make_link(Id, Link, false) ->
+    Link;
+make_link(Id, Link, true) ->
     #link{body=Link,
         actions=#event{target=Id, type=click, actions=#toggle{}}
     }.
