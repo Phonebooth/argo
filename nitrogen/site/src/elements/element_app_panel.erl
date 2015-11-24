@@ -12,6 +12,8 @@
     probe_cortex_for_commands/1
 ]).
 
+-define(RenderStyle, btn_group).
+
 -spec reflect() -> [atom()].
 reflect() -> record_info(fields, app_panel).
 
@@ -19,14 +21,28 @@ reflect() -> record_info(fields, app_panel).
 render_element(_Record = #app_panel{app=App}) ->
     fill_with_cortex_data(App),
     #panel{class="app-panel", body=#panel{class="", body=[
-            #list{id='commands-list', body=[
-                    #h2{body="Commands"},
-                    #expand_listitem{link="eval",
-                        body=#command{name=eval, app=App}},
-                    #expand_listitem{link="supervision tree",
-                        body=#command{name=supervision_tree, app=App}}
-                ]}
+            #h2{body="Commands"},
+            command_container([
+                    command_item("eval", #command{name=eval, app=App}),
+                    command_item("supervision tree", #command{name=supervision_tree, app=App})
+                ]),
+            #panel{id='command-content'}
         ]}}.
+
+command_container(Body) -> command_container(?RenderStyle, Body).
+command_item(Name, RenderContent) -> command_item(?RenderStyle, Name, RenderContent).
+
+command_container(list, Body) ->
+    #list{id='commands-list', body=Body};
+command_container(btn_group, Body) ->
+    #btn_group{id='commands-list', body=Body}.
+
+command_item(list, Name, RenderContent) ->
+    #expand_listitem{link=Name,
+        body=RenderContent};
+command_item(btn_group, Name, RenderContent) ->
+    #button{class="btn btn-link", text=Name,
+        postback=controller_main:updater('command-content', RenderContent)}.
 
 fill_with_cortex_data(App) ->
     wf:comet(fun() ->
@@ -38,7 +54,7 @@ fill_with_cortex_data(App) ->
 render_commands(App=#app{}) ->
     case probe_cortex_for_commands(App) of
         {ok, Commands} ->
-            [ #expand_listitem{link=X, body=#command{app=App, name=X, details=Y}} || {X,Y} <- Commands ];
+            [ command_item(X, #command{app=App, name=X, details=Y}) || {X,Y} <- Commands ];
         E ->
             ?ARGO(error, "failed to probe for commands ~p", [E]),
             []

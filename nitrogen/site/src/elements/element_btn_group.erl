@@ -12,7 +12,7 @@
 reflect() -> record_info(fields, btn_group).
 
 -spec render_element(#btn_group{}) -> body().
-render_element(_Record = #btn_group{body=Body}) ->
-    ["<div class=\"btn-group\" role=\"group\" aria-label=\"...\">"]
+render_element(_Record = #btn_group{id="."++Id, body=Body}) ->
+    ["<div class=\"btn-group "++wf:to_list(Id)++"\" role=\"group\" aria-label=\"...\">"]
     ++ Body ++
     ["</div>"].

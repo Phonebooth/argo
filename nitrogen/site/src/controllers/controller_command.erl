@@ -24,7 +24,7 @@ accept(#control{module=element_command,
     Input = "<pre><code>"++string:join([wf:f("~p", [X]) || X <- Vals], "\n")++"</code></pre>",
     StartTimestamp = human_now(),
     wf:insert_bottom(ResultTableId,
-        result_row(RowId, StartTimestamp, spin(), "--", Input, "--")
+        result_row(RowId, StartTimestamp, argo_util:spin(), "--", Input, "--")
     ),
     wf:comet(fun() ->
                 Tick = now(),
@@ -50,9 +50,6 @@ accept(#control{module=element_command,
         end);
 
 accept(_) -> false.
-
-spin() ->
-    #image { image="/nitrogen/spinner.gif" }.
 
 result_row(RowId, Timestamp, Exec, Id, Input, Result) ->
     #tablerow{id=RowId, cells=[

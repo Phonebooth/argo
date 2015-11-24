@@ -34,7 +34,7 @@ render_element(_Record = #command{name=eval, app=App}) ->
 render_element(_Record = #command{name=supervision_tree, app=App}) ->
     fill_supervision_tree(App),
     Contents = [#panel{class="col-sm-11 col-1-offset", body=[
-            #list{id=supervision_tree}
+                #list{id=supervision_tree, body=argo_util:spin()}
         ]}],
     command_shell_panel("Supervision Tree", Contents);
 render_element(Command = #command{name=Name, details=Details, body=undefined}) ->
