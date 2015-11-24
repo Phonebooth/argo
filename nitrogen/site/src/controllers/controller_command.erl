@@ -17,7 +17,7 @@ accept(#control{module=element_command,
 accept(#control{module=element_command,
         target=ResultTableId,
         trigger=submit,
-        model={App, CommandName, ArgData}}) ->
+        model={App, CommandName, FuncName, ArgData}}) ->
     Vals = [ apply_guards(wf:q(Id), Guards) || {Id, Guards} <- ArgData ],
     wf:wire(#show{target=ResultTableId}),
     RowId = wf:temp_id(),
@@ -28,7 +28,7 @@ accept(#control{module=element_command,
     ),
     wf:comet(fun() ->
                 Tick = now(),
-                Command = cortex_command:make_run_command(App, CommandName, Vals),
+                Command = cortex_command:make_run_command(App, CommandName, FuncName, Vals),
                 Key = cortex_command:send_command(Command, App#app.host),
                 Timeout = 5000,
                 case cortex_command:yield_command(Key, Timeout) of

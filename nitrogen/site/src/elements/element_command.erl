@@ -105,6 +105,6 @@ render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTab
             module=?MODULE,
             trigger=submit,
             target=ResultTableId,
-            model={App, CommandName, ArgData}
+            model={App, CommandName, FuncName, ArgData}
         }}.
 
