@@ -13,15 +13,35 @@
 reflect() -> record_info(fields, command).
 
 -spec render_element(#command{}) -> body().
+render_element(_Record = #command{name=eval, app=App}) ->
+    EvalId = wf:temp_id(),
+    EvalControl = #control{
+        module=element_app_panel,
+        trigger={eval, EvalId},
+        target='eval-result',
+        model=App},
+    Contents = [#panel{class="eval-panel", body=[
+            #panel{class="input-group", body=[
+                    #span{class="input-group-addon", body="eval"},
+                    #textbox{id=EvalId,
+                        class="form-control",
+                        text="erlang:now().",
+                        postback=EvalControl}
+                ]},
+            #panel{class="terminal argo-log", id='eval-result'}
+        ]}],
+    command_shell_panel("Eval", Contents);
+render_element(_Record = #command{name=supervision_tree, app=App}) ->
+    fill_supervision_tree(App),
+    Contents = [#panel{class="col-sm-11 col-1-offset", body=[
+            #list{id=supervision_tree}
+        ]}],
+    command_shell_panel("Supervision Tree", Contents);
 render_element(Command = #command{name=Name, details=Details, body=undefined}) ->
     %default command rendering
     ModalId = wf:temp_id(),
     Src = proplists:get_value(src, Details),
-    #expand_listitem{link=Name,
-        body=#panel{class="panel panel-default", body=
-            #panel{class="panel-body", body=[
-                #h3{body=Name},
-                #panel{body=["<small>","Last Updated: ",proplists:get_value(last_updated, Details),"</small>"]},
+    Contents = [#panel{body=["<small>","Last Updated: ",proplists:get_value(last_updated, Details),"</small>"]},
                 #btn_launch_modal{target=ModalId, body="View Source"},
                 #modal{modal_id=ModalId,
                        label="viewSourceLabel",
@@ -29,10 +49,18 @@ render_element(Command = #command{name=Name, details=Details, body=undefined}) -
                        body=["<pre><code>",
                            Src,
                            "</code></pre>"]}
-               ] ++ render_form(Command, Src)}}};
+               ] ++ render_form(Command, Src),
+    command_shell_panel(Name, Contents);
 render_element(_Record = #command{name=Name, body=Body}) ->
-    #expand_listitem{link=Name,
-        body=Body}.
+    Body.
+
+command_shell_panel(Name, Contents) ->
+    #panel{class="panel panel-default", body=
+        #panel{class="panel-body", body=[
+                #h3{body=Name}
+            ] ++ Contents
+        }
+    }.
 
 render_form(Command, Src) ->
     RunFuncs = cortex_command_fsm:parse(Src),
@@ -108,3 +136,10 @@ render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTab
             model={App, CommandName, FuncName, ArgData}
         }}.
 
+fill_supervision_tree(App) ->
+    wf:comet(fun() ->
+                Roots = supervision_tree_builder:find_roots(App),
+                Roots2 = [ supervision_tree_builder:empty(App, X, 0) || X <- Roots ],
+                wf:update(supervision_tree, Roots2),
+                wf:flush()
+        end).

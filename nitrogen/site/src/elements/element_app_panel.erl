@@ -17,30 +17,14 @@ reflect() -> record_info(fields, app_panel).
 
 -spec render_element(#app_panel{}) -> body().
 render_element(_Record = #app_panel{app=App}) ->
-    EvalId = eval,
-    EvalControl = (control(App))#control{
-        trigger=EvalId,
-        target='eval-result'},
-
     fill_with_cortex_data(App),
     #panel{class="app-panel", body=#panel{class="", body=[
             #list{id='commands-list', body=[
                     #h2{body="Commands"},
-                    #command{name="eval",
-                                     body=#panel{class="eval-panel", body=[
-                                        #panel{class="input-group", body=[
-                                            #span{class="input-group-addon", body="eval"},
-                                            #textbox{id=EvalId,
-                                                    class="form-control",
-                                                    text="erlang:now().",
-                                                    postback=EvalControl}
-                                            ]},
-                                        #panel{class="terminal argo-log", id='eval-result'}
-                                    ]}},
-                    #command{name="supervision tree",
-                                    body=#panel{class="col-sm-11 col-1-offset", body=[
-                                                #list{id=supervision_tree}
-                                        ]}}
+                    #expand_listitem{link="eval",
+                        body=#command{name=eval, app=App}},
+                    #expand_listitem{link="supervision tree",
+                        body=#command{name=supervision_tree, app=App}}
                 ]}
         ]}}.
 
@@ -48,22 +32,13 @@ fill_with_cortex_data(App) ->
     wf:comet(fun() ->
             Commands = render_commands(App),
             [wf:insert_bottom('commands-list', X) || X <- Commands ],
-            wf:flush(),
-
-            Roots = supervision_tree_builder:find_roots(App),
-            Roots2 = [ supervision_tree_builder:empty(App, X, 0) || X <- Roots ],
-            wf:update(supervision_tree, Roots2),
             wf:flush()
     end).
-
-control(App) ->
-    #control{module=?MODULE,
-        model=App}.
 
 render_commands(App=#app{}) ->
     case probe_cortex_for_commands(App) of
         {ok, Commands} ->
-            [ #command{app=App, name=X, details=Y} || {X,Y} <- Commands ];
+            [ #expand_listitem{link=X, body=#command{app=App, name=X, details=Y}} || {X,Y} <- Commands ];
         E ->
             ?ARGO(error, "failed to probe for commands ~p", [E]),
             []
