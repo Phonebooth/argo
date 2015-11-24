@@ -38,7 +38,7 @@ render_form(Command, Src) ->
     RunFuncs = cortex_command_fsm:parse(Src),
     lists:map(fun(X) -> render_func(Command, X) end, RunFuncs).
 
-render_func(Command, #run_func{arity=Arity, vars=Vars}) ->
+render_func(Command, #run_func{name=FuncName, arity=Arity, vars=Vars}) ->
     RVars = lists:map(fun(X) -> render_var(Command, X) end, Vars),
     {ArgIds, ArgGuards, VarHtml} = lists:unzip3(RVars),
     NumVars = length(Vars),
@@ -49,7 +49,7 @@ render_func(Command, #run_func{arity=Arity, vars=Vars}) ->
     ResultTableId = wf:temp_id(),
     #panel{class="panel panel-default", body=[
         #panel{class="panel-body", body=
-            [render_run_btn(Command, Arity, ResultTableId, lists:zip(ArgIds, ArgGuards))]
+            [render_run_btn(Command, {FuncName, Arity}, ResultTableId, lists:zip(ArgIds, ArgGuards))]
             ++ [ #panel{class="col-sm-"++integer_to_list(ColsPerVar), body=X} || X <- VarHtml ]
             },
             render_result_table(ResultTableId)
@@ -63,6 +63,7 @@ render_result_table(Id) ->
                 #tablecell{text="Timestamp"},
                 #tablecell{text="Exec (msec)"},
                 #tablecell{text="Id"},
+                #tablecell{text="Input"},
                 #tablecell{text="Result"}
             ]
         }}.
@@ -97,9 +98,9 @@ render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guar
             }}
     end.
 
-render_run_btn(#command{app=App, name=CommandName}, Arity, ResultTableId, ArgData) ->
+render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTableId, ArgData) ->
     #button{class="col-sm-2 btn btn-primary",
-        body=["run", "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}],
+        body=[FuncName, "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}],
         postback=#control{
             module=?MODULE,
             trigger=submit,

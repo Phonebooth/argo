@@ -21,8 +21,10 @@ accept(#control{module=element_command,
     Vals = [ apply_guards(wf:q(Id), Guards) || {Id, Guards} <- ArgData ],
     wf:wire(#show{target=ResultTableId}),
     RowId = wf:temp_id(),
+    Input = "<pre><code>"++string:join([wf:f("~p", [X]) || X <- Vals], "\n")++"</code></pre>",
+    StartTimestamp = human_now(),
     wf:insert_bottom(ResultTableId,
-        result_row(RowId, spin(), "--", "--", "--")
+        result_row(RowId, StartTimestamp, spin(), "--", Input, "--")
     ),
     wf:comet(fun() ->
                 Tick = now(),
@@ -34,15 +36,15 @@ accept(#control{module=element_command,
                         Tock = now(),
                         Exec = timer:now_diff(Tock, Tick),
                         PreResult = ["<pre><code>", wf:f("~p", [Result]), "</code></pre>"],
-                        wf:replace(RowId, result_row(RowId, human_now(), Exec div 1000, Key, PreResult)),
+                        wf:replace(RowId, result_row(RowId, StartTimestamp, Exec div 1000, Key, Input, PreResult)),
                         wf:flush();
                     {error, timeout} ->
-                        wf:replace(RowId,  result_row(RowId, human_now(), "timeout ("++integer_to_list(Timeout)++")", Key, "--")),
+                        wf:replace(RowId,  result_row(RowId, StartTimestamp, "timeout ("++integer_to_list(Timeout)++")", Key, Input, "--")),
                         wf:flush();
                     E ->
                         ?ARGO(error, "command error ~p", [E]),
                         PreError = ["<pre><code>", wf:f("~p", [E]), "</code></pre>"],
-                        wf:replace(RowId, result_row(RowId, human_now(), "error", Key, PreError)),
+                        wf:replace(RowId, result_row(RowId, StartTimestamp, "error", Key, Input, PreError)),
                         wf:flush()
                 end
         end);
@@ -52,33 +54,58 @@ accept(_) -> false.
 spin() ->
     #image { image="/nitrogen/spinner.gif" }.
 
-result_row(RowId, Timestamp, Exec, Id, Result) ->
+result_row(RowId, Timestamp, Exec, Id, Input, Result) ->
     #tablerow{id=RowId, cells=[
             #tablecell{body=Timestamp},
             #tablecell{body=try integer_to_list(Exec) of S -> S catch _:_ -> Exec end},
             #tablecell{body=Id},
+            #tablecell{body=Input},
             #tablecell{body=Result}
         ]}.
 
 apply_guards(Val, Guards) when is_list(Val) ->
-    case lists:member(is_list, Guards) of
+    case lists:member(is_atom, Guards) of
         true ->
-            Val;
+            list_to_atom(Val);
         false ->
-            case lists:member(is_atom, Guards) of
+            case lists:member(is_integer, Guards) of
                 true ->
-                    list_to_atom(Val);
+                    list_to_integer(Val);
                 false ->
-                    case lists:member(is_integer, Guards) of
+                    case lists:member(is_binary, Guards) of
                         true ->
-                            list_to_integer(Val);
+                            list_to_binary(Val);
                         false ->
-                            Val
+                            case lists:member(is_list, Guards) of
+                                true ->
+                                    make_list(Val);
+                                false ->
+                                    Val
+                            end
                     end
             end
     end;
 apply_guards(Val, _) ->
     Val.
+
+make_list(Val) when is_list(Val) ->
+    case re:run(Val, "^\\s*(?<list>\\[[^\\]]*\\])\\s*\\.{0,1}\\s*$", [{capture, [list], list}]) of
+        {match, [Listlike]} ->
+            % Looks like someone typed a list
+            case erl_scan:string(Listlike++".", 1, []) of
+                {ok, Tokens, _} ->
+                    case erl_parse:parse_term(Tokens) of
+                        {ok, ErlList} ->
+                            ErlList;
+                        _ ->
+                            Val
+                    end;
+                _ ->
+                    Val
+            end;
+        notmatch ->
+            Val
+    end.
 
 human_now() ->
     timestamp_to_human(os:timestamp()).

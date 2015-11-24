@@ -5,5 +5,5 @@
 
 -record(app, {host, node}).
 
--record(run_func, {arity, vars=[]}).
+-record(run_func, {name, arity, vars=[]}).
 -record(run_var, {name, guards=[]}).
