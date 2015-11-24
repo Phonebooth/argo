@@ -160,7 +160,7 @@ finish_vars(FuncName, State=#state{exports=Exports, data=Data}) ->
     State#state{exports=Exports2, data=[]}.
 
 skip_remaining_block({dot,_}, {FN, State}) ->
-    {next_state, capturing_vars, {FN, State}};
+    {next_state, expr, State};
 skip_remaining_block({';', _}, {FN, State=#state{data=[]}}) ->
     {next_state, capturing_vars, {FN, State}};
 skip_remaining_block({';', _}, {FN, State=#state{data=[_|T]}}) ->

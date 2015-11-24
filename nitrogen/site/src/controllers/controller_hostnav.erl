@@ -55,9 +55,7 @@ fill_appnav(Host) ->
 
 loop_appnav(Host) ->
     receive
-        {Host, Reachable, Node, LastContactTime} ->
-            ets:insert(app_reachability, {{Host, Node}, [{reachable, Reachable},
-                        {last_contact_time, LastContactTime}]}),
+        {Host, _Reachable, _Node, _LastContactTime} ->
             case wf:session(select_host) of
                 Host ->
                     refresh_appnav(Host);

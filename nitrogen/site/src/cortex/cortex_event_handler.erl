@@ -46,6 +46,8 @@ notify_app_change(Host, Reachable, Data) ->
     Value = proplists:get_value(value, Data),
     LastContactTime = proplists:get_value(last_contact_time, Value),
     Node = proplists:get_value(node, Data),
+    ets:insert(app_reachability, {{Host, Node}, [{reachable, Reachable},
+                             {last_contact_time, LastContactTime}]}),
     case ets:lookup(global_comet_pools, {appnav, Host}) of
         [{_, PoolPid}] ->
             PoolPid ! {Host, Reachable, Node, LastContactTime};
