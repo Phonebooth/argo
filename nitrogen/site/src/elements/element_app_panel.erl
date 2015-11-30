@@ -41,7 +41,7 @@ command_item(list, Name, RenderContent) ->
     #expand_listitem{link=element_command:format_udnerscores(Name),
         body=RenderContent};
 command_item(btn_group, Name, RenderContent) ->
-    #button{class="btn btn-default", text=element_command:format_underscores(Name),
+    #button{class="btn btn-default", text=element_command:format_name(Name),
         postback=controller_main:updater('command-content', RenderContent)}.
 
 fill_with_cortex_data(App) ->

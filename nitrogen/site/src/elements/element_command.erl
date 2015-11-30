@@ -7,7 +7,7 @@
 -export([
     reflect/0,
     render_element/1,
-    format_underscores/1
+    format_name/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -58,7 +58,7 @@ render_element(_Record = #command{name=Name, body=Body}) ->
 command_shell_panel(Name, Contents) ->
     #panel{class="panel panel-default", body=
         #panel{class="panel-body", body=[
-                #h3{body=format_underscores(Name)}
+                #h3{body=format_name(Name)}
             ] ++ Contents
         }
     }.
@@ -79,7 +79,7 @@ render_func(Command, #run_func{comments=Comments, name=FuncName, arity=Arity, va
     ResultTableId = wf:temp_id(),
     #panel{class="panel panel-default", body=[
         #panel{class="panel-body", body=
-            [#h4{body=format_underscores(FuncName)}] ++
+            [#h4{body=format_name(FuncName)}] ++
             [render_comments(Comments)] ++
             [render_run_btn(Command, {FuncName, Arity}, ResultTableId, lists:zip(ArgIds, ArgGuards))]
             ++ [ #panel{class="col-sm-"++integer_to_list(ColsPerVar), body=X} || X <- VarHtml ]
@@ -144,7 +144,7 @@ render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guar
     end.
 
 render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTableId, ArgData) ->
-    FuncBtn = format_underscores(FuncName),
+    FuncBtn = format_name(FuncName),
     #button{class="col-sm-2 btn btn-primary",
         style="margin-bottom:4px;white-space: normal;",
         body=[FuncBtn, "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}],
@@ -155,9 +155,11 @@ render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTab
             model={App, CommandName, FuncName, ArgData}
         }}.
 
-format_underscores(A) when is_atom(A) ->
-    format_underscores(atom_to_list(A));
-format_underscores(S) when is_list(S) ->
+format_name(A) when is_atom(A) ->
+    format_name(atom_to_list(A));
+format_name("ctxcmd_"++S) when is_list(S) ->
+    format_name(S);
+format_name(S) when is_list(S) ->
     re:replace(S, "_", " ", [{return, list}, global]).
 
 fill_supervision_tree(App) ->

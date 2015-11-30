@@ -46,7 +46,7 @@ send_command(Command, Host, RecvPid) ->
 mfa(Mfa, App, RecvPid) when is_tuple(Mfa) ->
     mfa(tuple_to_list(Mfa), App, RecvPid);
 mfa(Mfa, #app{node=Node, host=Host}, RecvPid) ->
-    Command = new_command({mfa, run, Mfa}, Node),
+    Command = new_command({ctxcmd_mfa, run, Mfa}, Node),
     send_command(Command, Host, RecvPid).
 
 node_status_command() ->
