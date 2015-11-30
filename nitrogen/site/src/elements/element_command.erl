@@ -113,10 +113,10 @@ render_result_table(Id) ->
             ]
         }}.
 
-render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guards=Guards}) ->
+render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guards=Guards, suggestions=VarSuggest}) ->
     Id = wf:temp_id(),
     Src = proplists:get_value(src, Details),
-    Suggestions = cortex_command_suggestions:get(CommandName, Name, Src),
+    Suggestions = cortex_command_suggestions:get(CommandName, Name, Src, VarSuggest),
     Textbox = #textbox{id=Id,
         class="form-control",
         placeholder=io_lib:format("~w", [Guards])},

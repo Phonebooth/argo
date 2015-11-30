@@ -1,11 +1,11 @@
 -module(cortex_command_suggestions).
 
--export([get/3, get_nodes/0]).
+-export([get/4, get_nodes/0]).
 
-get(iswitch_node_offline, 'Node', _Src) ->
+get(iswitch_node_offline, 'Node', _Src, []) ->
     get_nodes();
-get(_, _, _) ->
-    [].
+get(_, _, _, VarSuggest) ->
+    VarSuggest.
 
 get_nodes() ->
     {RevReach, RevUnreach} =

@@ -13,15 +13,18 @@
          compiler_directive/2,
             export/2,
             vsn/2,
+            spec/2,
+            suggestions/2,
          capturing_vars/2,
          capturing_guards/2,
          skip_remaining_block/2,
          skip_to_dot/2]).
 
--define(Directives, [export, vsn]).
+-define(Directives, [export, vsn, spec]).
 
+-record(spec_suggest_st, {varnum=1, func_name, suggestions=[]}).
 -record(cap_var_st, {comments=[], func_name}).
--record(state, {comments=[], exports=[], data}).
+-record(state, {comments=[], exports=[], suggestions=[], data}).
 
 -include("largo.hrl").
 -include("argo.hrl").
@@ -42,7 +45,24 @@ parse(Src) when is_binary(Src) ->
     stop(Pid),
     Comments = State#state.comments,
     Exports = State#state.exports,
-    {Comments, Exports}.
+    Suggestions = State#state.suggestions,
+    ExportsWithSuggestions = lists:map(fun(RunFunc=#run_func{name=Name, vars=Vars}) ->
+                case proplists:get_value(Name, Suggestions) of
+                    undefined ->
+                        RunFunc;
+                    FuncSugg ->
+                        {_, Vars2} = lists:foldl(fun(Var, {Count, Vars_}) ->
+                                  case proplists:get_value(Count, FuncSugg) of
+                                      undefined ->
+                                          {Count+1, [Var|Vars_]};
+                                      VarSugg ->
+                                          {Count+1, [Var#run_var{suggestions=VarSugg}|Vars_]}
+                                  end
+                          end, {1, []}, Vars),
+                      RunFunc#run_func{vars=lists:reverse(Vars2)}
+                end
+        end, Exports),
+    {Comments, ExportsWithSuggestions}.
 
 stop(Pid) ->
     gen_fsm:send_all_state_event(Pid, stop).
@@ -96,6 +116,40 @@ vsn({dot, _}, State) ->
 vsn(Msg, State) ->
     ?ARGO(debug, "vsn ~p", [Msg]),
     {next_state, vsn, State}.
+
+spec({dot, _}, State) ->
+    {next_state, expr, State};
+spec({atom,_,FuncName}, State) ->
+    {next_state, suggestions, {#spec_suggest_st{func_name=FuncName}, State}};
+spec(Msg, State) ->
+    ?ARGO(debug, "spec ~p", [Msg]),
+    {next_state, spec, State}.
+
+suggestions({dot, _}, {_,State}) ->
+    {next_state, expr, State};
+suggestions({'->', _}, {#spec_suggest_st{func_name=Func, suggestions=Sugg},State=#state{suggestions=FinishedSugg}}) ->
+    FinishedSugg2 = case proplists:get_value(Func, FinishedSugg) of
+        undefined ->
+            FinishedSugg ++ [{Func, lists:usort(Sugg)}];
+        _ ->
+            ?ARGO(error, "suggestions conflict", []),
+            FinishedSugg
+    end,
+    ?ARGO(debug, "suggestions done ~p", [FinishedSugg2]),
+    {next_state, skip_to_dot, State#state{suggestions=FinishedSugg2}};
+suggestions({',', _}, {SpecSuggest=#spec_suggest_st{varnum=VarNum}, State}) ->
+    {next_state, suggestions, {SpecSuggest#spec_suggest_st{varnum=VarNum+1}, State}};
+suggestions({atom, _, Atom}, {SpecSuggest=#spec_suggest_st{suggestions=Sugg, varnum=VarNum}, State}) ->
+    Sugg2 = case proplists:get_value(VarNum, Sugg) of
+        undefined ->
+            Sugg ++ [{VarNum, [Atom]}];
+        ExistSugg ->
+            proplists:delete(VarNum, Sugg) ++ [{VarNum, ExistSugg ++ [Atom]}]
+    end,
+    {next_state, suggestions, {SpecSuggest#spec_suggest_st{suggestions=Sugg2}, State}};
+suggestions(_Msg, State) ->
+    ?ARGO(debug, "suggestions ~p", [_Msg]),
+    {next_state, suggestions, State}.
 
 capturing_vars(_Msg={'->', _}, {CapVarSt=#cap_var_st{func_name=FuncName}, State}) ->
     ?ARGO(debug, "arrow capturing_vars ~p", [_Msg]),
@@ -176,7 +230,7 @@ finish_vars(#cap_var_st{comments=Comments, func_name=FuncName},
         end, Exports),
     State#state{exports=Exports2, data=[]}.
 
-skip_remaining_block({dot,_}, {FN, State}) ->
+skip_remaining_block({dot,_}, {_FN, State}) ->
     {next_state, expr, State};
 skip_remaining_block({';', _}, {FN, State=#state{data=[]}}) ->
     {next_state, capturing_vars, {#cap_var_st{func_name=FN}, State}};

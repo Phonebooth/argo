@@ -6,4 +6,4 @@
 -record(app, {host, node}).
 
 -record(run_func, {comments=[], name, arity, vars=[]}).
--record(run_var, {name, guards=[]}).
+-record(run_var, {name, guards=[], suggestions=[]}).
