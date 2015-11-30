@@ -1,11 +1,15 @@
+% This is a test comment
+% on multiple lines
 -module(cortex_command_fsm).
 -behaviour(gen_fsm).
+
+% cortex_command_fsm:parse(element(2, file:read_file("site/src/cortex/cortex_command_fsm.erl"))).
 
 -export([parse/1]).
 
 -export([init/1, handle_event/3, handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
--export([expr/2,
+-export([module_comments/2, expr/2,
          compiler_directive/2,
             export/2,
             vsn/2,
@@ -16,14 +20,16 @@
 
 -define(Directives, [export, vsn]).
 
--record(state, {exports=[], data}).
+-record(cap_var_st, {comments=[], func_name}).
+-record(state, {comments=[], exports=[], data}).
 
 -include("largo.hrl").
 -include("argo.hrl").
 
+% Parses the input source binary for cortex command structure
 parse(Src) when is_binary(Src) ->
     {ok, Pid} = gen_fsm:start_link(?MODULE, [], []),
-    {ok, Tokens, _} = erl_scan:string(binary_to_list(Src)),
+    {ok, Tokens, _} = erl_scan:string(binary_to_list(Src), 1, [return_comments]),
     lists:foreach(fun(X) ->
                 gen_fsm:send_event(Pid, X)
         end, Tokens),
@@ -34,25 +40,35 @@ parse(Src) when is_binary(Src) ->
             St2
     end,
     stop(Pid),
+    Comments = State#state.comments,
     Exports = State#state.exports,
-    Exports.
+    {Comments, Exports}.
 
 stop(Pid) ->
     gen_fsm:send_all_state_event(Pid, stop).
 
 init([]) ->
     ?ARGO(debug, "init command fsm", []),
-    {ok, expr, #state{}}.
+    {ok, module_comments, #state{}}.
+
+module_comments(_Msg={comment, _Line, Comment}, State=#state{comments=Comments}) ->
+    ?ARGO(debug, "module_comments ~p", [_Msg]),
+    {next_state, module_comments, State#state{comments=[Comment|Comments]}};
+module_comments(Msg, State=#state{comments=Comments}) ->
+    expr(Msg, State#state{comments=lists:reverse(Comments)}).
 
 expr(_Msg={'-', _}, State) ->
     ?ARGO(debug, "expr ~p", [_Msg]),
-    {next_state, compiler_directive, State};
-expr(_Msg={atom,_,FuncName}, State) ->
+    {next_state, compiler_directive, State#state{data=[]}};
+expr({comment, _Line, Comment}, State=#state{data=Data}) ->
+    {next_state, expr, State#state{data=[Comment|Data]}};
+expr(_Msg={atom,_,FuncName}, State=#state{data=Data}) ->
     ?ARGO(debug, "expr ~p", [_Msg]),
-    {next_state, capturing_vars, {FuncName, State#state{data=[]}}};
+    {next_state, capturing_vars, {#cap_var_st{comments=lists:reverse(Data),
+                                              func_name=FuncName}, State#state{data=[]}}};
 expr(_Msg, State) ->
     ?ARGO(debug, "expr ~p", [_Msg]),
-    {next_state, expr, State}.
+    {next_state, expr, State#state{data=[]}}.
 
 compiler_directive({atom, _, Directive}, State) ->
     case lists:member(Directive, ?Directives) of
@@ -81,19 +97,19 @@ vsn(Msg, State) ->
     ?ARGO(debug, "vsn ~p", [Msg]),
     {next_state, vsn, State}.
 
-capturing_vars(_Msg={'->', _}, {FuncName, State}) ->
-    ?ARGO(debug, "capturing_vars ~p", [_Msg]),
-    {next_state, skip_remaining_block, {FuncName, finish_vars(FuncName, State)}};
-capturing_vars({'when', _}, {FuncName, State=#state{data=Data}}) ->
+capturing_vars(_Msg={'->', _}, {CapVarSt=#cap_var_st{func_name=FuncName}, State}) ->
+    ?ARGO(debug, "arrow capturing_vars ~p", [_Msg]),
+    {next_state, skip_remaining_block, {FuncName, finish_vars(CapVarSt, State)}};
+capturing_vars({'when', _}, {CapVarSt=#cap_var_st{func_name=FuncName}, State=#state{data=Data}}) ->
     Arity = length(Data),
     FuncSpec = {FuncName, Arity},
-    {next_state, capturing_guards, {FuncSpec, finish_vars(FuncName, State)}};
-capturing_vars(_Msg={var,_,Name}, {FuncName, State=#state{data=Data}}) ->
+    {next_state, capturing_guards, {FuncSpec, finish_vars(CapVarSt, State)}};
+capturing_vars(_Msg={var,_,Name}, {CapVarSt, State=#state{data=Data}}) ->
     ?ARGO(debug, "capturing_vars ~p", [_Msg]),
-    {next_state, capturing_vars, {FuncName, State#state{data=[#run_var{name=Name}|Data]}}};
-capturing_vars(_Msg, {FuncName, State}) ->
+    {next_state, capturing_vars, {CapVarSt, State#state{data=[#run_var{name=Name}|Data]}}};
+capturing_vars(_Msg, {CapVarSt, State}) ->
     ?ARGO(debug, "capturing_vars ~p", [_Msg]),
-    {next_state, capturing_vars, {FuncName, State}}.
+    {next_state, capturing_vars, {CapVarSt, State}}.
 
 capturing_guards({'->', _}, {FuncSpec={FuncName,_Arity}, State}) ->
     {next_state, skip_remaining_block, {FuncName, finish_guards(FuncSpec, State)}};
@@ -144,13 +160,14 @@ finish_guards(FuncSpec={_FuncName, _Arity}, State=#state{exports=Exports, data=D
         end, Exports),
     State#state{exports=Exports2, data=[]}.
 
-finish_vars(FuncName, State=#state{exports=Exports, data=Data}) ->
+finish_vars(#cap_var_st{comments=Comments, func_name=FuncName},
+            State=#state{exports=Exports, data=Data}) ->
     NumVars = length(Data),
     Exports2 = 
     lists:map(fun(F=#run_func{name=Name, arity=Arity, vars=[]}) ->
                 case {Name, Arity} of
                     {FuncName, NumVars} ->
-                        F#run_func{vars=lists:reverse(Data)};
+                        F#run_func{comments=Comments, vars=lists:reverse(Data)};
                     _ ->
                         F
                 end;
@@ -162,7 +179,7 @@ finish_vars(FuncName, State=#state{exports=Exports, data=Data}) ->
 skip_remaining_block({dot,_}, {FN, State}) ->
     {next_state, expr, State};
 skip_remaining_block({';', _}, {FN, State=#state{data=[]}}) ->
-    {next_state, capturing_vars, {FN, State}};
+    {next_state, capturing_vars, {#cap_var_st{func_name=FN}, State}};
 skip_remaining_block({';', _}, {FN, State=#state{data=[_|T]}}) ->
     {next_state, skip_remaining_block, {FN, State#state{data=T}}};
 skip_remaining_block({atom,_,'case'}, {FN, State=#state{data=Data}}) ->

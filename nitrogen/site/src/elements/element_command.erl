@@ -6,7 +6,8 @@
 -include("argo.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    format_underscores/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -42,7 +43,7 @@ render_element(Command = #command{name=Name, details=Details, body=undefined}) -
     ModalId = wf:temp_id(),
     Src = proplists:get_value(src, Details),
     Contents = [#panel{body=["<small>","Last Updated: ",proplists:get_value(last_updated, Details),"</small>"]},
-                #btn_launch_modal{target=ModalId, body="View Source"},
+                #p{}, #btn_launch_modal{target=ModalId, body="View Source"}, #p{},
                 #modal{modal_id=ModalId,
                        label="viewSourceLabel",
                        modal_title="View Source - " ++ wf:to_list(Name),
@@ -57,16 +58,17 @@ render_element(_Record = #command{name=Name, body=Body}) ->
 command_shell_panel(Name, Contents) ->
     #panel{class="panel panel-default", body=
         #panel{class="panel-body", body=[
-                #h3{body=Name}
+                #h3{body=format_underscores(Name)}
             ] ++ Contents
         }
     }.
 
 render_form(Command, Src) ->
-    RunFuncs = cortex_command_fsm:parse(Src),
+    {ModuleComments, RunFuncs} = cortex_command_fsm:parse(Src),
+    render_comments(ModuleComments) ++ 
     lists:map(fun(X) -> render_func(Command, X) end, RunFuncs).
 
-render_func(Command, #run_func{name=FuncName, arity=Arity, vars=Vars}) ->
+render_func(Command, #run_func{comments=Comments, name=FuncName, arity=Arity, vars=Vars}) ->
     RVars = lists:map(fun(X) -> render_var(Command, X) end, Vars),
     {ArgIds, ArgGuards, VarHtml} = lists:unzip3(RVars),
     NumVars = length(Vars),
@@ -77,12 +79,27 @@ render_func(Command, #run_func{name=FuncName, arity=Arity, vars=Vars}) ->
     ResultTableId = wf:temp_id(),
     #panel{class="panel panel-default", body=[
         #panel{class="panel-body", body=
+            [#h4{body=format_underscores(FuncName)}] ++
+            [render_comments(Comments)] ++
             [render_run_btn(Command, {FuncName, Arity}, ResultTableId, lists:zip(ArgIds, ArgGuards))]
             ++ [ #panel{class="col-sm-"++integer_to_list(ColsPerVar), body=X} || X <- VarHtml ]
             },
             render_result_table(ResultTableId)
         ]
     }.
+
+render_comments([]) ->
+    [];
+render_comments(Comments) ->
+    FoldRes = lists:foldl(fun(X, A) ->
+                case re:run(X, "%+\\s*(?<text>.*)", [{capture, [text], list}]) of
+                    {match, [Text]} ->
+                        ["<br/>", Text | A];
+                    nomatch ->
+                        A
+                end
+        end, [], Comments),
+    "<p>" ++ lists:flatten(lists:reverse(FoldRes)) ++ "</p>".
 
 render_result_table(Id) ->
     #table{id=Id, class="toshow table",
@@ -127,14 +144,21 @@ render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guar
     end.
 
 render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTableId, ArgData) ->
+    FuncBtn = format_underscores(FuncName),
     #button{class="col-sm-2 btn btn-primary",
-        body=[FuncName, "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}],
+        style="margin-bottom:4px;white-space: normal;",
+        body=[FuncBtn, "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}],
         postback=#control{
             module=?MODULE,
             trigger=submit,
             target=ResultTableId,
             model={App, CommandName, FuncName, ArgData}
         }}.
+
+format_underscores(A) when is_atom(A) ->
+    format_underscores(atom_to_list(A));
+format_underscores(S) when is_list(S) ->
+    re:replace(S, "_", " ", [{return, list}, global]).
 
 fill_supervision_tree(App) ->
     wf:comet(fun() ->
