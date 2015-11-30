@@ -18,11 +18,11 @@
     # locally onport 8000 and forwarding on the
     # remote host to port 8000
 
-    ssh -L 127.0.0.1:8000:127.0.0.1:8000 argo-qa-aws01.phoneboothdev.info -Nf
+    ssh -L 127.0.0.1:8000:127.0.0.1:8000 argo.republicdev.info -Nf
 }
 
 function argo-logout {
-    kill $(ps -ef | grep [a]rgo-qa-aws01.phoneboothdev.info | awk '{print $2}')
+    kill $(ps -ef | grep [a]rgo.republicdev.info | awk '{print $2}')
 }</code></pre></p>
     <p>Once you've logged in, continue via your secure argo tunnel:<br/><a href="http://localhost:8000">http://localhost:8000</a></p>
 </body>
