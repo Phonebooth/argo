@@ -7,3 +7,5 @@
 
 -record(run_func, {comments=[], name, arity, vars=[]}).
 -record(run_var, {name, guards=[], suggestions=[]}).
+
+-record(monitored_event, {filter, last_timestamp}).

@@ -6,8 +6,9 @@
 -include("largo.hrl").
 -include("db.hrl").
 
-handle_event(_DT, RK, Payload) ->
+handle_event(_DT, _RK, Payload) ->
     Term = binary_to_term(Payload),
+    subhandler_dispatch(Term),
     {ok, HistoryItem} = host_history:cortex_event(Term),
     #host_history{data=Data, host=Host} = HistoryItem,
     Label = proplists:get_value(label, Data),
@@ -54,3 +55,7 @@ notify_app_change(Host, Reachable, Data) ->
         _ ->
             ok
     end.
+
+subhandler_dispatch(Event) ->
+    charting_manager:handle_event(Event),
+    cortex_event_monitor:handle_event(Event).

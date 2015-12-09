@@ -130,8 +130,27 @@
         s_module :: any()
     }).
 
+-record(argo_chart, {?ELEMENT_BASE(element_argo_chart),
+        type :: string(),
+        range :: integer(),
+        value_format :: string()
+    }).
+
+-record(event_monitor, {?ELEMENT_BASE(element_event_monitor)
+    }).
+
 % CONTROLS
 -record(control, {module :: atom(),
                   trigger :: any(),
                   target :: any(),
                   model :: any()}).
+
+% ACTIONS
+
+-record(update_argo_chart, {?ACTION_BASE(action_update_argo_chart),
+        data :: any()
+    }).
+
+-record(update_event_monitor, {?ACTION_BASE(action_update_event_monitor),
+        data :: any()
+    }).

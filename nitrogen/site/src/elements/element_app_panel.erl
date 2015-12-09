@@ -20,14 +20,23 @@ reflect() -> record_info(fields, app_panel).
 -spec render_element(#app_panel{}) -> body().
 render_element(_Record = #app_panel{app=App}) ->
     fill_with_cortex_data(App),
+    wf:comet(fun() -> update_event_monitor(App#app.host, 10000) end),
     #panel{class="app-panel", body=#panel{class="", body=[
             #h2{body="Commands"},
             command_container([
                     command_item("eval", #command{name=eval, app=App}),
                     command_item("supervision tree", #command{name=supervision_tree, app=App})
                 ]),
-            #panel{id='command-content'}
+            #panel{id='command-content'},
+            #event_monitor{}
         ]}}.
+
+update_event_monitor(Host, Timeout) ->
+    timer:sleep(Timeout),
+    Events = cortex_event_monitor:get_events_for_host(Host),
+    wf:wire(#update_event_monitor{target="event-monitor-content", data=Events}),
+    wf:flush(),
+    update_event_monitor(Host, Timeout).
 
 command_container(Body) -> command_container(?RenderStyle, Body).
 command_item(Name, RenderContent) -> command_item(?RenderStyle, Name, RenderContent).

@@ -1,0 +1,178 @@
+<template>
+    <style>
+
+        .argo-chart-container {
+            margin-left: 20px;
+        }
+
+        .title {
+            font-weight: bold;
+            padding: 5px 5px 5px 5px;
+        }
+
+        .bar {
+          fill: steelblue;
+        }
+
+        .axis text {
+          font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
+        .x.axis path {
+          display: none;
+        }
+
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
+        .line {
+          fill: none;
+          stroke: steelblue;
+          stroke-width: 1.5px;
+        }
+    </style>
+    <div class="argo-chart-container">
+        <div class="title"></div>
+        <svg class="chart"></svg>
+    </div> 
+</template>
+<script>
+    (function() {
+
+        // http://www.revillweb.com/tutorials/web-component-tutorial/
+        // http://bost.ocks.org/mike/bar/3/
+
+        var template = document._currentScript.ownerDocument.querySelector('template');
+        var proto = Object.create(HTMLElement.prototype);
+
+        var x, y, xAxis, yAxis, chart, line;
+        var marginTop = 20;
+        var marginRight = 20;
+        var marginBottom = 20;
+        var marginLeft = 40;
+        var width = 600 - marginLeft - marginRight;
+        var height = 400 - marginTop - marginBottom;
+
+        proto.createdCallback = function() {
+
+            var clone = document.importNode(template.content, true);
+            this.createShadowRoot().appendChild(clone);
+
+            this.setTitle(this.getAttribute('title'));
+            this.configureType(this.getAttribute('type'));
+        };
+
+        proto.attachedCallback = function() {
+        };
+
+        proto.attributeChangedCallback = function(attrName, oldVal, newVal) {
+            switch (attrName) {
+                case 'data':
+                    this.updateData(newVal);
+                    break;
+            }
+        };
+
+        proto.updateData = function(data) {
+
+            data.forEach(function(d) {
+                d.timestamp = new Date(d.timestamp);
+            });
+
+            // http://bl.ocks.org/mbostock/3883245
+            x.domain(d3.extent(data, function(d) { return d.timestamp; }));
+            y.domain(d3.extent(data, function(d) { return d.value; }));
+
+            this.chart.selectAll("g").remove();
+            this.chart.selectAll(".line").remove();
+
+            this.chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+
+            this.chart.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end");
+
+            this.chart.append("path")
+                .datum(data)
+                .attr("class", "line")
+                .attr("d", line);
+        };
+
+        proto.configureTimestampValueType = function() {
+
+            var seconds = parseInt(this.getAttribute('range'));
+            var valueFormat = this.getAttribute('value-format');
+
+            // https://github.com/mbostock/d3/wiki/Time-Scales
+
+            // TODO: move this to updateData so the window updates as we go
+            var now = new Date();
+            var mins = now.getMinutes();
+            now.setMinutes(mins - 2);
+            var then = new Date();
+            then.setMinutes(mins + 2);
+
+            x = d3.time.scale()
+                .domain([now, then])
+                .range([0, width]);
+
+            y = d3.scale.linear()
+                .range([height, 0]);
+
+            xAxis = d3.svg.axis()
+                .scale(x)
+                .orient('bottom');
+                //.ticks(d3.time.minute, 1);
+                //.ticks(10, "");
+
+            yAxis = d3.svg.axis()
+                .scale(y)
+                .orient('left')
+                .ticks(10, valueFormat);
+
+            line = d3.svg.line()
+                .x(function(d) { return x(d.timestamp); })
+                .y(function(d) { return y(d.value); });
+        };
+
+        proto.configureType = function(type) {
+
+            switch (type) {
+                case 'timestamp-value':
+                    this.configureTimestampValueType();
+                    break;
+            }
+
+            this.chart = d3.select(this.shadowRoot.querySelector('.chart'))
+                        .attr("width", width + marginLeft + marginRight)
+                        .attr("height", height + marginTop + marginBottom)
+                        .append("g")
+                        .attr("transform", "translate(" + marginLeft + "," + marginTop + ")");
+        };
+
+        proto.setTitle = function(title) {
+            this.shadowRoot.querySelector('.title').innerHTML = title;
+        };
+
+        document.registerElement('argo-chart', {prototype: proto});
+    }());
+</script>
