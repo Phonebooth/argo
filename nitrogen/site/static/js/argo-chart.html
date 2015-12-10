@@ -88,6 +88,9 @@
 
             data.forEach(function(d) {
                 d.timestamp = new Date(d.timestamp);
+                if (isNaN(d.value)) {
+                    d.value = 0.0;
+                }
             });
 
             // http://bl.ocks.org/mbostock/3883245
@@ -140,8 +143,8 @@
 
             xAxis = d3.svg.axis()
                 .scale(x)
-                .orient('bottom');
-                //.ticks(d3.time.minute, 1);
+                .orient('bottom')
+                .ticks(d3.time.minute, 1);
                 //.ticks(10, "");
 
             yAxis = d3.svg.axis()

@@ -57,5 +57,4 @@ notify_app_change(Host, Reachable, Data) ->
     end.
 
 subhandler_dispatch(Event) ->
-    charting_manager:handle_event(Event),
     cortex_event_monitor:handle_event(Event).

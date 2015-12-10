@@ -7,39 +7,56 @@
 -include("largo.hrl").
 -include("records.hrl").
 
-accept(#control{module=action_update_event_monitor, target=EventFilter}) ->
-    %Title = wf:html_encode(lists:flatten(io_lib:format("~p", [EventFilter]))),
-    Title = lists:flatten(io_lib:format("~p", [EventFilter])),
+accept(#control{module=action_update_event_monitor, target={{_, _, Label}=EventFilter, ValueExtractor}}) ->
+    L = case ValueExtractor of
+            {_, V} ->
+                V;
+            _ ->
+                ValueExtractor
+        end,
+    Title = lists:flatten(io_lib:format("~p ~p", [Label, L])),
+    % TODO: use wf:temp_id() here?
     Uuid = argo_db:uuid(),
     IdStr = binary_to_list(Uuid),
-    {ok, ChartId} = charting_manager:start(EventFilter, timestamp, value),
-    wf:update("event-monitor-charts", new_chart(IdStr, ChartId, Title)),
-    wf:comet(fun() -> update_argo_chart(ChartId, IdStr, 10000) end);
-accept(#control{module=close_chart_panel, target={PanelId, ChartId}}) ->
-    charting_manager:stop(ChartId),
+    {ok, DataId} = cortex_event_monitor:save(EventFilter, [{kx, timestamp}, {vx, ValueExtractor}]),
+    {PanelId, Panel} = new_chart(IdStr, DataId, Title),
+    wf:wire(#insert_bottom{target="event-monitor-charts", elements=[Panel]}),
+    {ok, Pid} = wf:comet(fun() -> update_argo_chart(DataId, IdStr, 10000) end),
+    wf:session(PanelId, Pid);
+accept(#control{module=close_chart_panel, target={PanelId, DataId}}) ->
+    cortex_event_monitor:deref(DataId),
+    case wf:session(PanelId) of
+        Pid when is_pid(Pid) ->
+            exit(Pid, kill),
+            wf:session(DataId, undefined);
+        _ ->
+            ?ARGO(error, "cannot find comet pid for panel ~p", [PanelId])
+    end,
     wf:wire(#remove{target=PanelId});
 accept(_) ->
     false.
 
-new_chart(IdStr, ChartId, Title) ->
+new_chart(IdStr, DataId, Title) ->
     Id = list_to_atom(IdStr),
     PanelId = list_to_atom("row_" ++ IdStr),
-    #panel{id=PanelId,
-           class="panel panel-default",
-           body=[#panel{class="panel-heading",
-                        body=[
-                            #strong{body=Title},
-                            #button{class="btn btn-danger",
-                                    postback=#control{
-                                                module=close_chart_panel,
-                                                target={PanelId, ChartId}},
-                                    body=[#span{class="glyphicon glyphicon-remove-sign"}]}]},
-                 #panel{class="panel-body", body=[#argo_chart{id=Id}]}]
-            }.
+    Panel = #panel{id=PanelId,
+           class="row",
+           body=[#panel{class="panel panel-default",
+                        body=[#panel{class="panel-heading",
+                                     body=[#strong{body=Title},
+                                           #button{class="close",
+                                                   postback=#control{module=close_chart_panel,
+                                                                    target={PanelId, DataId}},
+                                                   body=[#span{text="x"}]}]},
+                              #panel{class="panel-body",
+                                     body=[#argo_chart{id=Id}]}]
+                       }
+                ]},
+    {PanelId, Panel}.
 
-update_argo_chart(ChartId, Target, Timeout) ->
-    Data = charting_manager:get_data(ChartId),
+update_argo_chart(DataId, Target, Timeout) ->
+    Data = cortex_event_monitor:get_data(DataId),
     wf:wire(#update_argo_chart{target=Target, data=Data}),
     wf:flush(),
     timer:sleep(Timeout),
-    update_argo_chart(ChartId, Target, Timeout).
+    update_argo_chart(DataId, Target, Timeout).

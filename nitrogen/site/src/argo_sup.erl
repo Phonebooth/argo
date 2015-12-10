@@ -33,11 +33,9 @@ init([]) ->
     ets:new(global_comet_pools, [public, named_table]),
     ets:new(app_reachability, [public, named_table]),
     cortex_event_monitor:init_tables(),
-    charting_manager:init_tables(),
 
     {ok, { {one_for_one, 5, 10},
             [?CHILD(cortex_events_sup, supervisor),
              ?CHILD(cortex_event_monitor, worker),
-             ?CHILD(charting_manager, worker),
              ?CHILD(nitrogen_test_svr, worker)]
         } }.
