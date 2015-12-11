@@ -28,26 +28,59 @@ render_body([#monitored_event{filter=Filter, keys=Keys, last_timestamp=Timestamp
     Secs = Temp rem 1000000,
     DT = calendar:now_to_universal_time({Megas, Secs, Micros}),
     Date = format_datetime(DT),
-    KeyButtons = build_key_buttons(Keys, Filter, []),
+    KeyElements = build_key_elements(Keys, Filter),
     Div = #panel{class="row",
                  body=[
                        #span{class="col-md-4", text=Date},
                        #span{class="col-md-4", text=Label},
-                       #span{class="col-md-4", body=KeyButtons}
+                       #span{class="col-md-4", body=KeyElements}
                       ]},
     render_body(Rest, [Div|Acc]).
+
+build_key_elements(Keys, Filter) ->
+    case length(Keys) of
+        N when N >= 5 ->
+            build_key_dropdown(Keys, Filter);
+        _ ->
+            build_key_buttons(Keys, Filter, [])
+    end.
+
+build_key_dropdown(Keys, Filter) ->
+    #panel{class="btn-group",
+           body=[
+                 #button{class="btn btn-default btn-xs dropdown-toggle",
+                         data_fields=[{toggle, dropdown}],
+                         body=[
+                               "values",
+                               #span{class="caret"}
+                              ]
+                        },
+                 #list{class="dropdown-menu",
+                       body=build_key_dropdown_items(Keys, Filter, [])
+                      }
+                ]}.
+
+build_key_dropdown_items([], _, Acc) ->
+    lists:reverse(Acc);
+build_key_dropdown_items([Key_|Rest], Filter, Acc) ->
+    E = #listitem{actions=build_key_click_action(Key_, Filter),
+                  body=[#link{body=wf:to_list(Key_)}]},
+    build_key_dropdown_items(Rest, Filter, [E|Acc]).
 
 build_key_buttons([], _, Acc) ->
     lists:reverse(Acc);
 build_key_buttons([Key_|Rest], Filter, Acc) ->
     Key = wf:to_list(Key_),
     Id = wf:temp_id(),
-    E = #span{id=Id,
-              class="label label-primary",
-              text=Key,
-              actions=#event{type=click,
-                             postback=#control{module=?MODULE, target={Filter, {value, Key_}}}}},
+    E = #button{id=Id,
+                class="btn btn-default btn-xs",
+                text=Key,
+                actions=build_key_click_action(Key_, Filter)},
     build_key_buttons(Rest, Filter, [E|Acc]).
+
+build_key_click_action(Key, Filter) ->
+    #event{type=click,
+           postback=#control{module=?MODULE, target={Filter, {value, Key}}}}.
 
 format_datetime({{Y, M, D}, {H, Mi, S}}) ->
     lists:flatten(io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B GMT",
