@@ -40,18 +40,16 @@ new_chart(IdStr, DataId, Title) ->
     Id = list_to_atom(IdStr),
     PanelId = list_to_atom("row_" ++ IdStr),
     Panel = #panel{id=PanelId,
-           class="row",
-           body=[#panel{class="panel panel-default",
-                        body=[#panel{class="panel-heading",
-                                     body=[#strong{body=Title},
-                                           #button{class="close",
-                                                   postback=#control{module=close_chart_panel,
-                                                                    target={PanelId, DataId}},
-                                                   body=[#span{text="x"}]}]},
-                              #panel{class="panel-body",
-                                     body=[#argo_chart{id=Id}]}]
-                       }
-                ]},
+                   body=[#panel{class="col-md-6",
+                                body=[#panel{class="panel panel-default",
+                                     body=[#panel{class="panel-heading",
+                                           body=[#strong{body=Title},
+                                                 #button{class="close",
+                                                         postback=#control{module=close_chart_panel,
+                                                                           target={PanelId, DataId}},
+                                                         body=[#span{text="x"}]}]},
+                                           #panel{class="panel-body",
+                                                  body=[#argo_chart{id=Id}]}]}]}]},
     {PanelId, Panel}.
 
 update_argo_chart(DataId, Target, Timeout) ->

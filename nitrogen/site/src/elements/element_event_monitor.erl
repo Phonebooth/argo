@@ -18,5 +18,8 @@ render_element(_Record = #event_monitor{}) ->
                  #panel{id='event-monitor-content container-fluid',
                         class="bg-info well well-lg",
                         actions=#update_event_monitor{}},
-                 #panel{id='event-monitor-charts', class="container-fluid"}
+                 #panel{class="container-fluid",
+                        body=[#panel{id='event-monitor-charts',
+                                     class="row"}]
+                       }
                 ]}.
