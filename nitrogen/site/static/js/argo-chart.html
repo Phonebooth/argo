@@ -95,7 +95,19 @@
 
             // http://bl.ocks.org/mbostock/3883245
             x.domain(d3.extent(data, function(d) { return d.timestamp; }));
-            y.domain(d3.extent(data, function(d) { return d.value; }));
+
+            var yext = d3.extent(data, function(d) { return d.value; });
+            if (yext[0] == yext[1]) {
+                // special handling for constant values that will not render nicely
+                if (yext[0] == 0) {
+                    yext = [-1, 1];
+                }
+                else {
+                    var delta = 0.1 * yext[0];
+                    yext = [yext[0] - delta, yext[1] + delta];
+                }
+            }
+            y.domain(yext);
 
             this.chart.selectAll("g").remove();
             this.chart.selectAll(".line").remove();
