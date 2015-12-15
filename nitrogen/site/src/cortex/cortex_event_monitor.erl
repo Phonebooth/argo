@@ -28,6 +28,8 @@
 -include("largo.hrl").
 -include("db.hrl").
 
+-define(DefaultWindowSize, 100).
+
 -record(state, {}).
 -record(cortex_event_data_values, {ref, filter, window, key_extractor, value_extractor, data=[]}).
 -record(cortex_event_data_lookup, {filter, ref}).
@@ -81,7 +83,7 @@ get_events_for_host(Host_) ->
 %%  proplist() with the following optional values:
 %%  {kx, atom()} - The key extractor.  Default is 'timestamp'.
 %%  {vx, atom()} - The value extractor.  Default is 'value'.
-%%  {window, integer()} - The number of data values to save.  Default is 50.
+%%  {window, integer()} - The number of data values to save.
 %%
 %% Returns:
 %%  {ok, Ref} where Ref is an opaque reference
@@ -142,7 +144,7 @@ do_save({H, N, _}=Filter, Options) when is_list(H) andalso is_atom(N) ->
                  I when is_integer(I) ->
                      I;
                  _ ->
-                     50
+                     ?DefaultWindowSize
              end,
     % Ref is based on the filter and extractors to prevent duplication.
     Ref = base64:encode(crypto:hash(md5, term_to_binary({Filter, KeyExtractor, ValueExtractor}))),

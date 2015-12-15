@@ -32,10 +32,10 @@ render_element(_Record = #app_panel{app=App}) ->
         ]}}.
 
 update_event_monitor(Host, Timeout) ->
-    timer:sleep(Timeout),
     Events = cortex_event_monitor:get_events_for_host(Host),
     wf:wire(#update_event_monitor{target="event-monitor-content", data=Events}),
     wf:flush(),
+    timer:sleep(Timeout),
     update_event_monitor(Host, Timeout).
 
 command_container(Body) -> command_container(?RenderStyle, Body).

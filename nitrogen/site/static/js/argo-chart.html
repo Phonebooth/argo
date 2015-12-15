@@ -10,6 +10,10 @@
             padding: 5px 5px 5px 5px;
         }
 
+        .chart {
+            display: none;
+        }
+
         .bar {
           fill: steelblue;
         }
@@ -41,10 +45,15 @@
           stroke: steelblue;
           stroke-width: 1.5px;
         }
+
+        .vertex {
+            fill: steelblue;
+        }
     </style>
     <div class="argo-chart-container">
         <div class="title"></div>
         <svg class="chart"></svg>
+        <div class="nodatalabel">Waiting for data...</div>
     </div> 
 </template>
 <script>
@@ -52,6 +61,8 @@
 
         // http://www.revillweb.com/tutorials/web-component-tutorial/
         // http://bost.ocks.org/mike/bar/3/
+        // http://bl.ocks.org/mbostock/3883245
+        // https://github.com/mbostock/d3/wiki/Time-Scales
 
         var template = document._currentScript.ownerDocument.querySelector('template');
         var proto = Object.create(HTMLElement.prototype);
@@ -60,20 +71,22 @@
         var marginTop = 20;
         var marginRight = 20;
         var marginBottom = 20;
-        var marginLeft = 40;
-        var width = 400 - marginLeft - marginRight;
-        var height = 300 - marginTop - marginBottom;
+        var marginLeft = 50;
+        var width = 0;
+        var height = 0;
+        var lastExtent = [0, 0];
 
         proto.createdCallback = function() {
-
             var clone = document.importNode(template.content, true);
             this.createShadowRoot().appendChild(clone);
-
-            this.setTitle(this.getAttribute('title'));
-            this.configureType(this.getAttribute('type'));
         };
 
         proto.attachedCallback = function() {
+            var baseWidth = this.shadowRoot.host.parentNode.offsetWidth - marginLeft;
+            width = baseWidth - marginLeft - marginRight;
+            height = (baseWidth / 1.618) - marginTop - marginBottom;
+            this.setTitle(this.getAttribute('title'));
+            this.configureType(this.getAttribute('type'));
         };
 
         proto.attributeChangedCallback = function(attrName, oldVal, newVal) {
@@ -86,6 +99,27 @@
 
         proto.updateData = function(data) {
 
+            if (typeof data.length != "undefined" && data.length == 0) {
+                // "waiting for data" message
+                return;
+            }
+            else {
+                this.shadowRoot.querySelector('.nodatalabel').style.display = 'none';
+                this.shadowRoot.querySelector('.chart').style.display = 'block';
+            }
+
+            // special handling for a single data point using the raw data value
+            var xext = [];
+            if (data.length == 1) {
+                var delta = 10; // this is seconds
+                xext = [data[0].timestamp - delta, data[0].timestamp + delta];
+            }
+            else {
+                rawxext0 = data[0].timestamp;
+                rawxext1 = data[1].timestamp;
+            }
+
+            // d3.time.scale() function x requires Date values
             data.forEach(function(d) {
                 d.timestamp = new Date(d.timestamp);
                 if (isNaN(d.value)) {
@@ -93,12 +127,15 @@
                 }
             });
 
-            // http://bl.ocks.org/mbostock/3883245
-            x.domain(d3.extent(data, function(d) { return d.timestamp; }));
+            // default x extent
+            if (xext.length == 0) {
+                xext = d3.extent(data, function(d) { return d.timestamp; });
+            }
+            x.domain(xext);
 
+            // special handling for constant values that do not render nicely
             var yext = d3.extent(data, function(d) { return d.value; });
             if (yext[0] == yext[1]) {
-                // special handling for constant values that will not render nicely
                 if (yext[0] == 0) {
                     yext = [-1, 1];
                 }
@@ -109,14 +146,18 @@
             }
             y.domain(yext);
 
+            // remove all existing chart elements
             this.chart.selectAll("g").remove();
             this.chart.selectAll(".line").remove();
+            this.chart.selectAll(".vertex").remove();
 
+            // draw the x axis
             this.chart.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + height + ")")
                 .call(xAxis);
 
+            // draw the y axis
             this.chart.append("g")
                 .attr("class", "y axis")
                 .call(yAxis)
@@ -126,18 +167,26 @@
                 .attr("dy", ".71em")
                 .style("text-anchor", "end");
 
+            // draw the data path
             this.chart.append("path")
                 .datum(data)
                 .attr("class", "line")
                 .attr("d", line);
+
+            // draw a dot at each data value
+            var circle = this.chart.selectAll("circle")
+                .data(data)
+                .enter().append("circle")
+                .attr("cx", function(d) { return x(d.timestamp); })
+                .attr("cy", function(d) { return y(d.value); })
+                .attr("r", 2)
+                .attr("class", "vertex");
         };
 
         proto.configureTimestampValueType = function() {
 
             var seconds = parseInt(this.getAttribute('range'));
             var valueFormat = this.getAttribute('value-format');
-
-            // https://github.com/mbostock/d3/wiki/Time-Scales
 
             // TODO: move this to updateData so the window updates as we go
             var now = new Date();
@@ -156,7 +205,8 @@
             xAxis = d3.svg.axis()
                 .scale(x)
                 .orient('bottom')
-                .ticks(d3.time.minute, 1);
+                //.ticks(10);
+                .ticks(d3.time.minute, 2);
                 //.ticks(10, "");
 
             yAxis = d3.svg.axis()
