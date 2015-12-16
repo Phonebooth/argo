@@ -56,12 +56,15 @@ render_element(_Record = #command{name=Name, body=Body}) ->
     Body.
 
 command_shell_panel(Name, Contents) ->
-    #panel{class="panel panel-default", body=
-        #panel{class="panel-body", body=[
-                #h3{body=format_name(Name)}
-            ] ++ Contents
-        }
-    }.
+    Id = wf:temp_id(),
+    #panel{id=Id, class="panel panel-default command-shell-panel", body=[
+        #panel{class="panel-heading", body=[
+            #strong{body=format_name(Name)},
+            #button{class="close",
+                    click=#remove{target=Id},
+                    body=[#span{text="x"}]}]},
+        #panel{class="panel-body", body=Contents}
+        ]}.
 
 render_form(Command, Src) ->
     {ModuleComments, RunFuncs} = cortex_command_fsm:parse(Src),

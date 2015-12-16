@@ -23,17 +23,21 @@ render_element(_Record = #supervision_tree{app=App, depth=D, root=Root, children
         class="supervision-tree",
         state=expand,
         toshow_id=TempId,
-        head=#panel{class="row",
+        head=#panel{class="row sup-row-margin",
             body=[
-                #panel{class="col-sm-1 text-center", body=supervisor_icon(ChildrenState)},
-                #panel{class="col-sm-2", body=element_expand_listitem:make_link(TempId, Root, LinkEnabled)},
+                #panel{class="col-sm-1 text-center", body=#panel{style="margin-left: 5px", body=supervisor_icon(ChildrenState)}},
+                #panel{class="col-sm-4", body=element_expand_listitem:make_link(TempId, Root, LinkEnabled)},
                 #panel{class="col-sm-1 text-center", body=actions(App, Root, D, Children)}
             ]},
-        body=#list{
-            body=[#panel{class="col-sm-11 col-1-offset", body=render_children(Children)},
-                    #panel{class="clear"}]
-            }
+            body=render_child_list(Children)
     }.
+
+render_child_list([]) ->
+    [];
+render_child_list(Children) ->
+    #list{body=[
+                #panel{class="col-sm-11 col-1-offset", body=render_children(Children)},
+                #panel{class="clear"}]}.
 
 children_state(undefined) -> undefined;
 children_state([]) -> empty;
@@ -61,4 +65,4 @@ actions(App, Root, D, _Children) ->
 render_children(undefined) ->
     [];
 render_children(Children) ->
-    #list{class="list-group", body=Children}.
+    #list{class="list-group sup-child-list", body=Children}.

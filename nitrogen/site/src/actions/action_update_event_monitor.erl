@@ -13,13 +13,15 @@
 -spec render_action(#update_event_monitor{}) -> actions().
 render_action(#update_event_monitor{target=Target, data=Data}) ->
     Sorted = sort_data(Data),
-    Body = render_body(Sorted, []),
+    Rows = render_rows(Sorted, []),
+    Body = #table{class="table table-striped table-bordered",
+                  rows=Rows},
     wf:update(Target, [Body]),
     "".
 
-render_body([], Acc) ->
+render_rows([], Acc) ->
     Acc;
-render_body([#monitored_event{filter=Filter, keys=Keys, last_timestamp=Timestamp}|Rest], Acc) ->
+render_rows([#monitored_event{filter=Filter, keys=Keys, last_timestamp=Timestamp}|Rest], Acc) ->
     PL = cortex_event_monitor:event_filter_to_proplist(Filter),
     Label = list_to_binary(lists:flatten(io_lib:format("~p", [proplists:get_value(label, PL)]))),
     Temp = Timestamp div 1000,
@@ -29,13 +31,11 @@ render_body([#monitored_event{filter=Filter, keys=Keys, last_timestamp=Timestamp
     DT = calendar:now_to_universal_time({Megas, Secs, Micros}),
     Date = format_datetime(DT),
     KeyElements = build_key_elements(Keys, Filter),
-    Div = #panel{class="row",
-                 body=[
-                       #span{class="col-md-4", text=Date},
-                       #span{class="col-md-4", text=Label},
-                       #span{class="col-md-4", body=KeyElements}
-                      ]},
-    render_body(Rest, [Div|Acc]).
+    El = #tablerow{cells=[
+                     #tablecell{text=Date},
+                     #tablecell{text=Label},
+                     #tablecell{body=KeyElements}]},
+    render_rows(Rest, [El|Acc]).
 
 build_key_elements(Keys, Filter) ->
     case length(Keys) of

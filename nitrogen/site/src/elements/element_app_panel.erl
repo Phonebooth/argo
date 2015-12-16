@@ -23,11 +23,13 @@ render_element(_Record = #app_panel{app=App}) ->
     wf:comet(fun() -> update_event_monitor(App#app.host, 10000) end),
     #panel{class="app-panel", body=#panel{class="", body=[
             #h2{body="Commands"},
-            command_container([
-                    command_item("eval", #command{name=eval, app=App}),
-                    command_item("supervision tree", #command{name=supervision_tree, app=App})
-                ]),
-            #panel{id='command-content'},
+            #panel{class="container-fluid", body=[
+                command_container([
+                        command_item("eval", #command{name=eval, app=App}),
+                        command_item("supervision tree", #command{name=supervision_tree, app=App})
+                    ]),
+                #panel{class="row", id='command-content'}
+            ]},
             #event_monitor{}
         ]}}.
 
@@ -38,7 +40,9 @@ update_event_monitor(Host, Timeout) ->
     timer:sleep(Timeout),
     update_event_monitor(Host, Timeout).
 
-command_container(Body) -> command_container(?RenderStyle, Body).
+command_container(Body) ->
+    #panel{class="row", body=[command_container(?RenderStyle, Body)]}.
+
 command_item(Name, RenderContent) -> command_item(?RenderStyle, Name, RenderContent).
 
 command_container(list, Body) ->

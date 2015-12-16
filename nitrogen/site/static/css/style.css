@@ -153,3 +153,12 @@ body {
 .eval-panel {
     max-width: 600px;
 }
+
+.command-shell-panel {
+    margin-top: 20px;
+}
+
+.sup-row-margin {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
