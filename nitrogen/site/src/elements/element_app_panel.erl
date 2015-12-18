@@ -19,8 +19,22 @@ reflect() -> record_info(fields, app_panel).
 
 -spec render_element(#app_panel{}) -> body().
 render_element(_Record = #app_panel{app=App}) ->
+    case wf:session(current_host) of
+        undefined ->
+            ok;
+        {Host, P} ->
+            ?ARGO(info, "teardown current page host ~p pid ~p", [Host, P]),
+            case is_pid(P) of
+                true ->
+                    exit(P, kill);
+                _ ->
+                    ok
+            end
+    end,
     fill_with_cortex_data(App),
-    wf:comet(fun() -> update_event_monitor(App#app.host, 10000) end),
+    {ok, Pid} = wf:comet(fun() -> update_event_monitor(10000) end),
+    wf:session(current_host, {App#app.host, Pid}),
+    wf:session(charts, []),
     #panel{class="app-panel", body=#panel{class="", body=[
             #h2{body="Commands"},
             #panel{class="container-fluid", body=[
@@ -33,12 +47,13 @@ render_element(_Record = #app_panel{app=App}) ->
             #event_monitor{}
         ]}}.
 
-update_event_monitor(Host, Timeout) ->
+update_event_monitor(Timeout) ->
+    {Host, _} = wf:session(current_host),
     Events = cortex_event_monitor:get_events_for_host(Host),
     wf:wire(#update_event_monitor{target="event-monitor-content", data=Events}),
     wf:flush(),
     timer:sleep(Timeout),
-    update_event_monitor(Host, Timeout).
+    update_event_monitor(Timeout).
 
 command_container(Body) ->
     #panel{class="row", body=[command_container(?RenderStyle, Body)]}.

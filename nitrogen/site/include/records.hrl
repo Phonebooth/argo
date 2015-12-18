@@ -41,6 +41,7 @@
         body
     }).
 -record(btn_group, {?ELEMENT_BASE(element_btn_group),
+        extclass,
         body :: list()
     }).
 -record(eventlog, {?ELEMENT_BASE(element_eventlog),
@@ -133,7 +134,7 @@
 -record(argo_chart, {?ELEMENT_BASE(element_argo_chart),
         type :: string(),
         range :: integer(),
-        value_format :: string()
+        value_format
     }).
 
 -record(event_monitor, {?ELEMENT_BASE(element_event_monitor)
@@ -148,6 +149,7 @@
 % ACTIONS
 
 -record(update_argo_chart, {?ACTION_BASE(action_update_argo_chart),
+        type :: atom(),
         data :: any()
     }).
 

@@ -162,3 +162,11 @@ body {
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
+.chart-button {
+    margin-top: -7px;
+    border: 0;
+    margin-left: 0px;
+    background: transparent;
+    font-weight: bold;
+}

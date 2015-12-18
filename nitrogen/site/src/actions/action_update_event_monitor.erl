@@ -17,6 +17,8 @@ render_action(#update_event_monitor{target=Target, data=Data}) ->
     Body = #table{class="table table-striped table-bordered",
                   rows=Rows},
     wf:update(Target, [Body]),
+    Charts = wf:session(charts),
+    update_charts(Charts),
     "".
 
 render_rows([], Acc) ->
@@ -36,6 +38,20 @@ render_rows([#monitored_event{filter=Filter, keys=Keys, last_timestamp=Timestamp
                      #tablecell{text=Label},
                      #tablecell{body=KeyElements}]},
     render_rows(Rest, [El|Acc]).
+
+update_charts([]) ->
+    ok;
+update_charts([{_PanelId, {DataId, Target}}|Rest]) ->
+    ?ARGO(info, "update chart ~p", [Target]),
+    Data = cortex_event_monitor:get_data(DataId),
+    wf:wire(#update_argo_chart{target=Target, type=update_data, data=Data}),
+    wf:flush(),
+    update_charts(Rest);
+update_charts([Value|Rest]) ->
+    ?ARGO(error, "unexpected chart value in session: ~p", [Value]),
+    update_charts(Rest);
+update_charts(_) ->
+    ok.
 
 build_key_elements(Keys, Filter) ->
     case length(Keys) of

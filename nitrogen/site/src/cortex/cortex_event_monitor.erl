@@ -86,7 +86,9 @@ get_events_for_host(Host_) ->
 %%  {window, integer()} - The number of data values to save.
 %%
 %% Returns:
-%%  {ok, Ref} where Ref is an opaque reference
+%%  {ok, Ref, Format} where
+%%      Ref is an opaque reference
+%%      Format is one of [percent, undefined]
 %%  {error, Error}
 %%
 save(EventFilter, Options) ->
@@ -162,7 +164,13 @@ do_save({H, N, _}=Filter, Options) when is_list(H) andalso is_atom(N) ->
             ets:insert(cortex_event_data_values, R),
             ets:insert(cortex_event_data_lookup, #cortex_event_data_lookup{filter=Filter, ref=Ref})
     end,
-    {ok, Ref};
+    Format = case ets:lookup(cortex_monitored_events, Filter) of
+                 [#monitored_event{format=Format_}|_] ->
+                     Format_;
+                 _ ->
+                     undefined
+             end,
+    {ok, Ref, Format};
 do_save(_, _) ->
     {error, badarg}.
 
@@ -173,13 +181,14 @@ do_deref(_Ref) ->
 do_handle_event(Event) ->
     Timestamp = proplists:get_value(timestamp, Event),
     Value = proplists:get_value(value, Event),
+    Format = proplists:get_value(format, Event),
     Keys = case is_list(Value) of
         true ->
             lists:sort(proplists:get_keys(Value));
         _ ->
             []
     end,
-    ets:insert(cortex_monitored_events, #monitored_event{filter=get_event_filter(Event), keys=Keys, last_timestamp=Timestamp}),
+    ets:insert(cortex_monitored_events, #monitored_event{filter=get_event_filter(Event), format=Format, keys=Keys, last_timestamp=Timestamp}),
     update_data(Event).
 
 update_data(Event) ->
