@@ -3,6 +3,7 @@
 
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("records.hrl").
+-include("largo.hrl").
 
 accept(#control{module=element_appnav_item,
                 model=App}) ->

@@ -4,8 +4,10 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("../include/records.hrl").
 -include("db.hrl").
+-include("largo.hrl").
 
 main() ->
+    argo_context:init(),
     #template { file="./site/templates/bare.html" }.
 
 title() -> "Welcome to Argo".
@@ -15,8 +17,19 @@ sidebar() ->
                 case cortex_discovery:get_all(cortex_broker) of
                     {ok, Hosts} ->
                         [wf:insert_bottom('index-nav', #hostnav{host=X}) || X <- Hosts ],
-                        SelectHost = wf:session(select_host),
-                        case lists:member(wf:session(select_host), Hosts) of
+                        SelectHost = case wf:session(select_host) of
+                                         undefined ->
+                                             case argo_context:get("host") of
+                                                 undefined ->
+                                                     undefined;
+                                                 QPHost ->
+                                                     list_to_binary(QPHost)
+                                             end;
+                                         SelectHost_ ->
+                                             SelectHost_
+                                     end,
+                        ?ARGO(info, "*** CGS render host ~p", [SelectHost]),
+                        case lists:member(SelectHost, Hosts) of
                             true ->
                                 controller_hostnav:select_host(SelectHost);
                             _ ->

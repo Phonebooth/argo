@@ -34,6 +34,13 @@ render_element(_Record = #app_panel{app=App}) ->
     fill_with_cortex_data(App),
     {ok, Pid} = wf:comet(fun() -> update_event_monitor(10000) end),
     wf:session(current_host, {App#app.host, Pid}),
+    case argo_context:get_all("chart") of
+        L when is_list(L) ->
+            ?ARGO(info, "*** CGS bookmarked charts ~p", [L]),
+            build_charts(L);
+        undefined ->
+            ok
+    end,
     wf:session(charts, []),
     #panel{class="app-panel", body=#panel{class="", body=[
             #h2{body="Commands"},
@@ -46,6 +53,27 @@ render_element(_Record = #app_panel{app=App}) ->
             ]},
             #event_monitor{}
         ]}}.
+
+build_charts([]) ->
+    ok;
+build_charts([Desc|Rest]) ->
+    case string:tokens(Desc, ":") of
+        % TODO: this doesn't work yet for labels that are terms like logfile events
+        [Label, V0, V1] ->
+            Host = argo_context:get("host"),
+            Node = argo_context:get("app"),
+            Filter = {wf:to_list(Host), wf:to_atom(Node), Label},
+            ?ARGO(info, "*** CGS Filter = ~p", [Filter]),
+            Ex = {wf:to_atom(V0), wf:to_atom(V1)},
+            wf:wire(#event{postback=#control{module=action_update_event_monitor, target={Filter, Ex}}});
+        [Label, V] ->
+            % TODO
+            ok;
+        _ ->
+            ?ARGO(error, "invalid chart descriptor ~p", [Desc]),
+            ok
+    end,
+    build_charts(Rest).
 
 update_event_monitor(Timeout) ->
     {Host, _} = wf:session(current_host),

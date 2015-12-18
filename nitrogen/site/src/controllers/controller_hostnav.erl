@@ -6,6 +6,7 @@
 -include("records.hrl").
 -include("db.hrl").
 -include("argo.hrl").
+-include("largo.hrl").
 
 % element_mfa_button :: confirm == require
 accept(_Control=#control{module=element_hostnav,
@@ -16,9 +17,22 @@ accept(_) -> false.
 
 select_host(Host) ->
     wf:session(select_host, Host),
-    wf:session(select_app, undefined),
     wf:update('index-host', Host),
     wf:flush(),
+    case argo_context:get("app") of
+        undefined ->
+            render_unselected_app(Host);
+        AppName ->
+            ?ARGO(info, "*** CGS render bookmarked app ~p", [AppName]),
+            %fill_appnav(Host),
+            wf:update('index-app', "load tasks"),
+            App = #app{host=Host, node=list_to_atom(AppName)},
+            wf:session(select_app, App),
+            controller_app_choice:select_app(App)
+    end.
+
+render_unselected_app(Host) ->
+    wf:session(select_app, undefined),
     wf:update('index-appnav', 
         #panel{body=[
                 #appnav_item{host=Host,
@@ -40,11 +54,11 @@ register_for_global_events(PoolId, LoopFun) ->
     {ok, PoolPid} = action_comet:get_pool_pid(undefined, PoolId, global),
     ets:insert(global_comet_pools, {PoolId, PoolPid}).
 
-auto_scroll(Id) ->
-    wf:wire(Id, #event{type=timer,
-            delay=5,
-            actions=#script{script="var elem=obj('"++atom_to_list(Id)++"'); elem.scrollTop=elem.scrollHeight;"}
-        }).
+%auto_scroll(Id) ->
+%    wf:wire(Id, #event{type=timer,
+%            delay=5,
+%            actions=#script{script="var elem=obj('"++atom_to_list(Id)++"'); elem.scrollTop=elem.scrollHeight;"}
+%        }).
 
 fill_appnav(Host) ->
     wf:comet(fun() ->
@@ -125,6 +139,7 @@ select_first_reachable_app(Host) ->
                     case proplists:get_value(reachable, Data, node_unreachable) of
                         node_reachable ->
                             App = #app{host=Host, node=AppNode},
+                            ?ARGO(info, "*** CGS auto selecting app ~p", [App]),
                             controller_app_choice:select_app(App),
                             done;
                         _ ->
