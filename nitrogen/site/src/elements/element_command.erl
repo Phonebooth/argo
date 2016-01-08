@@ -16,21 +16,17 @@ reflect() -> record_info(fields, command).
 -spec render_element(#command{}) -> body().
 render_element(_Record = #command{name=eval, app=App}) ->
     EvalId = wf:temp_id(),
-    EvalControl = #control{
-        module=element_app_panel,
-        trigger={eval, EvalId},
-        target='eval-result',
-        model=App},
-    Contents = [#panel{class="eval-panel", body=[
-            #panel{class="input-group", body=[
+    {EvalTarget, EvalControl} = eval_postback(EvalId, App),
+    Contents = [#panel{class="eval-panel", body=
+            [#panel{class="input-group", body=[
                     #span{class="input-group-addon", body="eval"},
                     #textbox{id=EvalId,
                         class="form-control",
-                        text="erlang:now().",
+                        placeholder="erlang:now().",
                         postback=EvalControl}
-                ]},
-            #panel{class="terminal argo-log", id='eval-result'}
-        ]}],
+                ]}] ++
+            eval_result_panels(EvalTarget, App)
+        }],
     command_shell_panel("Eval", Contents);
 render_element(_Record = #command{name=supervision_tree, app=App}) ->
     fill_supervision_tree(App),
@@ -54,6 +50,36 @@ render_element(Command = #command{name=Name, details=Details, body=undefined}) -
     command_shell_panel(Name, Contents);
 render_element(_Record = #command{name=Name, body=Body}) ->
     Body.
+
+% controller_app handles the dispatch of these controls
+eval_postback(EvalId, #app{}=App) ->
+    Target = 'eval-result',
+    Control = #control{
+        module=element_app_panel,
+        trigger={eval, EvalId},
+        target=Target,
+        model=App},
+    {Target, Control};
+eval_postback(EvalId, {multi, HostNodeTuples}=App) ->
+    Ints = lists:seq(1, length(HostNodeTuples)),
+    Target = [list_to_atom("multi-eval-result-" ++ integer_to_list(I)) || I <- Ints],
+    Control = #control{
+        module=multi_eval,
+        trigger={eval, EvalId},
+        target=Target,
+        model=App},
+    {Target, Control}.
+
+eval_result_panels(TargetId, #app{}) ->
+    [#panel{class="terminal argo-log", id=TargetId}];
+eval_result_panels(TargetIds, {multi, HostNodeTuples}) ->
+    L = lists:zip(TargetIds, HostNodeTuples),
+    lists:flatten([
+        [
+            #strong{text=wf:to_list(Host) ++ " " ++ wf:to_list(Node)},
+            #panel{class="terminal argo-log", id=Id}
+        ] || {Id, {Host, Node}} <- L
+    ]).
 
 command_shell_panel(Name, Contents) ->
     Id = wf:temp_id(),

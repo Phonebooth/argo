@@ -11,8 +11,11 @@
 % element_mfa_button :: confirm == require
 accept(_Control=#control{module=element_hostnav,
                 model=Host}) ->
-    select_host(Host);
-
+    argo_util:navigate_to([{"host", Host}]),
+    true;
+accept(#control{module=tag_navigate, target=Tag}) ->
+    argo_util:navigate_to([{"tag", Tag}]),
+    true;
 accept(_) -> false.
 
 select_host(Host) ->
@@ -23,9 +26,8 @@ select_host(Host) ->
         undefined ->
             render_unselected_app(Host);
         AppName ->
-            ?ARGO(info, "*** CGS render bookmarked app ~p", [AppName]),
-            %fill_appnav(Host),
-            wf:update('index-app', "load tasks"),
+            fill_appnav(Host),
+            wf:update('index-app', #strong{text="Select an app..."}),
             App = #app{host=Host, node=list_to_atom(AppName)},
             wf:session(select_app, App),
             controller_app_choice:select_app(App)
@@ -41,7 +43,7 @@ render_unselected_app(Host) ->
                      ]}),
     wf:flush(),
     fill_appnav(Host),
-    wf:update('index-app', "load tasks").
+    wf:update('index-app', #strong{text="Select an app..."}).
 
 register_for_global_events(PoolId, LoopFun) ->
     case wf:session({comet_global, PoolId}) of
@@ -110,26 +112,35 @@ probe_cortex_app_status(Host) ->
     end.
 
 appnav_contents_(Host) ->
-    ets:foldl(fun({{AppHost, AppNode}, Data}, A) when AppHost =:= Host ->
+    L = lists:sort(ets:tab2list(app_reachability)),
+    F = fun
+            ({{AppHost, AppNode}, Data}, A) when AppHost =:= Host ->
                 Reachability = proplists:get_value(reachable, Data, node_unreachable),
-                [ #appnav_item{host=AppHost, node=AppNode, reachability=Reachability} | A ];
+                Tags = proplists:get_value(tags, Data, []),
+                [#appnav_item{host=AppHost, node=AppNode, tags=Tags, reachability=Reachability} | A];
             (_, A) ->
                 A
-        end, [], app_reachability).
+        end,
+    lists:reverse(lists:foldl(F, [], L)).
 
 refresh_appnav(Host) ->
     case appnav_contents(Host) of
         [] ->
             ok;
         Apps ->
-            wf:update('index-appnav', #panel{body=Apps}),
+            wf:update('index-appnav', #table{class="table table-bordered table-condensed", rows=Apps}),
             wf:flush(),
-            case wf:session(select_app) of
-                undefined ->
-                    select_first_reachable_app(Host),
-                    wf:flush();
+            case length(Apps) > 1 of
+                true ->
+                    ok;
                 _ ->
-                    ok
+                    case wf:session(select_app) of
+                        undefined ->
+                            select_first_reachable_app(Host),
+                            wf:flush();
+                        _ ->
+                            ok
+                    end
             end
     end.
 
@@ -139,7 +150,6 @@ select_first_reachable_app(Host) ->
                     case proplists:get_value(reachable, Data, node_unreachable) of
                         node_reachable ->
                             App = #app{host=Host, node=AppNode},
-                            ?ARGO(info, "*** CGS auto selecting app ~p", [App]),
                             controller_app_choice:select_app(App),
                             done;
                         _ ->

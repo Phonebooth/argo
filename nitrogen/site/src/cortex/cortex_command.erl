@@ -5,6 +5,7 @@
 -export([node_status_command/0, discover_commands_command/0, make_run_command/4]).
 
 -include("argo.hrl").
+-include("largo.hrl").
 
 blocking_mfa(Mfa, App, Timeout) ->
     Key = async_mfa(Mfa, App),

@@ -8,7 +8,6 @@
 -include("records.hrl").
 
 accept(#control{module=action_update_event_monitor, target={{_, _, Label}=EventFilter, ValueExtractor}}) ->
-    ?ARGO(info, "*** CGS new chart ~p ~p", [EventFilter, ValueExtractor]),
     L = case ValueExtractor of
             {_, V} ->
                 V;

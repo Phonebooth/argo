@@ -28,7 +28,6 @@ sidebar() ->
                                          SelectHost_ ->
                                              SelectHost_
                                      end,
-                        ?ARGO(info, "*** CGS render host ~p", [SelectHost]),
                         case lists:member(SelectHost, Hosts) of
                             true ->
                                 controller_hostnav:select_host(SelectHost);
@@ -54,6 +53,17 @@ navbar() ->
     }.
 
 content() ->
+    case argo_context:get(tag) of
+        undefined ->
+            app_view();
+        Tag ->
+            tag_view(Tag)
+    end.
+
+tag_view(Tag) ->
+    [#tag_panel{tag=Tag}].
+
+app_view() ->    
     [host(),
      app_nav(),
      app()].
@@ -62,7 +72,7 @@ host() ->
     #h1{id='index-host', class="page-header", text="Host"}.
 
 app_nav() ->
-    #panel{id='index-appnav',
+    #panel{id='index-appnav', class="container-fluid",
         body=["app nav"]}.
 
 app() ->

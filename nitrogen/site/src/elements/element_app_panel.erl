@@ -9,7 +9,9 @@
     reflect/0,
     render_element/1,
     render_commands/1,
-    probe_cortex_for_commands/1
+    probe_cortex_for_commands/1,
+    commands_container_element/2,
+    fill_commands_container/1
 ]).
 
 -define(RenderStyle, btn_group).
@@ -31,28 +33,37 @@ render_element(_Record = #app_panel{app=App}) ->
                     ok
             end
     end,
-    fill_with_cortex_data(App),
-    {ok, Pid} = wf:comet(fun() -> update_event_monitor(10000) end),
+    fill_commands_container(App),
+    {ok, Pid} = wf:comet(fun() -> update_event_monitor(App, 10000) end),
     wf:session(current_host, {App#app.host, Pid}),
     case argo_context:get_all("chart") of
         L when is_list(L) ->
-            ?ARGO(info, "*** CGS bookmarked charts ~p", [L]),
             build_charts(L);
         undefined ->
             ok
     end,
     wf:session(charts, []),
     #panel{class="app-panel", body=#panel{class="", body=[
-            #h2{body="Commands"},
-            #panel{class="container-fluid", body=[
-                command_container([
-                        command_item("eval", #command{name=eval, app=App}),
-                        command_item("supervision tree", #command{name=supervision_tree, app=App})
-                    ]),
-                #panel{class="row", id='command-content'}
-            ]},
-            #event_monitor{}
+            #h2{text=wf:to_list(App#app.node)},
+            #h3{body="Commands"},
+            [commands_container_element(App, true)] ++
+            [#event_monitor{}]
         ]}}.
+
+commands_container_element(App, RenderSupervisionTree) ->
+    SupItem = case RenderSupervisionTree of
+                  true ->
+                      [command_item("supervision tree", #command{name=supervision_tree, app=App})];
+                  _ ->
+                      []
+              end,
+    #panel{class="container-fluid", body=[
+        command_container(
+                [command_item("eval", #command{name=eval, app=App})] ++
+                SupItem
+            ),
+        #panel{class="row", id='command-content'}
+    ]}.
 
 build_charts([]) ->
     ok;
@@ -63,10 +74,9 @@ build_charts([Desc|Rest]) ->
             Host = argo_context:get("host"),
             Node = argo_context:get("app"),
             Filter = {wf:to_list(Host), wf:to_atom(Node), Label},
-            ?ARGO(info, "*** CGS Filter = ~p", [Filter]),
             Ex = {wf:to_atom(V0), wf:to_atom(V1)},
             wf:wire(#event{postback=#control{module=action_update_event_monitor, target={Filter, Ex}}});
-        [Label, V] ->
+        [_Label, _V] ->
             % TODO
             ok;
         _ ->
@@ -75,13 +85,13 @@ build_charts([Desc|Rest]) ->
     end,
     build_charts(Rest).
 
-update_event_monitor(Timeout) ->
+update_event_monitor(#app{host=Host, node=Node}=App, Timeout) ->
     {Host, _} = wf:session(current_host),
-    Events = cortex_event_monitor:get_events_for_host(Host),
+    Events = cortex_event_monitor:get_events_for_host(Host, Node),
     wf:wire(#update_event_monitor{target="event-monitor-content", data=Events}),
     wf:flush(),
     timer:sleep(Timeout),
-    update_event_monitor(Timeout).
+    update_event_monitor(App, Timeout).
 
 command_container(Body) ->
     #panel{class="row", body=[command_container(?RenderStyle, Body)]}.
@@ -100,7 +110,7 @@ command_item(btn_group, Name, RenderContent) ->
     #button{class="btn btn-default", text=element_command:format_name(Name),
         postback=controller_main:updater('command-content', RenderContent)}.
 
-fill_with_cortex_data(App) ->
+fill_commands_container(App) ->
     wf:comet(fun() ->
             Commands = render_commands(App),
             [wf:insert_bottom('commands-list', X) || X <- Commands ],

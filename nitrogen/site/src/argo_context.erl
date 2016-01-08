@@ -5,11 +5,11 @@
 -export([
          init/0,
          get/1,
-         get_all/1
+         get_all/1,
+         set/2
         ]).
 
 init() ->
-    ?ARGO(info, "*** CGS init context", []),
     QueryParams = parse_query_params(),
     wf:session(argo_context, QueryParams).
 
@@ -51,3 +51,10 @@ parse_query_params([Pair|Rest], Acc) ->
         [K] ->
             parse_query_params(Rest, [{K, true}|Acc])
     end.
+
+set(Key_, Value) ->
+    Key = wf:to_list(Key_),
+    L = wf:session_default(argo_context, []),
+    L2 = proplists:delete(Key, L),
+    L3 = [{Key, wf:to_list(Value)}|L2],
+    wf:session(argo_context, L3).

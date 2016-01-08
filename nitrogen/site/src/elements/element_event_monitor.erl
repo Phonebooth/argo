@@ -14,7 +14,7 @@ reflect() -> record_info(fields, event_monitor).
 -spec render_element(#event_monitor{}) -> body().
 render_element(_Record = #event_monitor{}) ->
     #panel{body=[
-                 #h2{body="Event Monitor"},
+                 #h3{body="Event Monitor"},
                  #panel{id='event-monitor-content',
                         actions=#update_event_monitor{}},
                  #panel{class="container-fluid",

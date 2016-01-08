@@ -3,11 +3,13 @@
 
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("records.hrl").
+-include("argo.hrl").
 -include("largo.hrl").
 
 accept(#control{module=element_appnav_item,
-                model=App}) ->
-    select_app(App);
+                model=#app{host=Host, node=Node}}) ->
+    argo_util:navigate_to([{"host", Host}, {"app", Node}]);
+%    select_app(App);
 
 accept(_) -> false.
 

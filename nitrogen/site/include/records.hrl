@@ -92,6 +92,7 @@
 -record(appnav_item, {?ELEMENT_BASE(element_appnav_item),
         host :: any(),
         node :: any(),
+        tags :: any(),
         reachability :: any()
     }).
 
@@ -116,6 +117,10 @@
 
 -record(app_panel, {?ELEMENT_BASE(element_app_panel),
         app
+    }).
+
+-record(tag_panel, {?ELEMENT_BASE(element_tag_panel),
+        tag
     }).
 
 -record(cookie_input, {?ELEMENT_BASE(element_cookie_input),

@@ -7,7 +7,7 @@
          start_link/0,
          init_tables/0,
          handle_event/1,
-         get_events_for_host/1,
+         get_events_for_host/2,
          get_event_filter/1, get_event_filter/3,
          event_filter_to_proplist/1,
          normalize_to_str/1,
@@ -48,14 +48,15 @@ init_tables() ->
 handle_event(Event) ->
     gen_server:cast(?MODULE, {handle_event, Event}).
 
-get_events_for_host(Host_) ->
+get_events_for_host(Host_, Node_) ->
     Host = normalize_to_str(Host_),
+    Node = wf:to_atom(Node_),
     F = fun
             (#monitored_event{filter={_, _, {running, _}}}, Acc) ->
                 Acc;
             (#monitored_event{filter={_, _, {done, _}}}, Acc) ->
                 Acc;
-            (#monitored_event{filter={Host2, _, _}}=E, Acc) when Host2 =:= Host ->
+            (#monitored_event{filter={Host2, Node2, _}}=E, Acc) when Host2 =:= Host andalso Node2 =:= Node ->
                 [E|Acc];
             (_, Acc) ->
                 Acc
@@ -175,7 +176,6 @@ do_save(_, _) ->
     {error, badarg}.
 
 do_deref(_Ref) ->
-    ?ARGO(info, "*** CGS do_deref unimplemented", []),
     todo.
 
 do_handle_event(Event) ->
@@ -209,8 +209,9 @@ update_data_values(Event, [#cortex_event_data_lookup{ref=Ref}|Rest]) ->
             Value = extract(Event, VX),
             KV = {Key, Value},
             Data__ = lists:append(Data_, [KV]),
+            Limit = Window + 1,
             Data = case length(Data__) of
-                Window ->
+                Limit ->
                     [_|Data___] = Data__,
                     Data___;
                 _ ->
