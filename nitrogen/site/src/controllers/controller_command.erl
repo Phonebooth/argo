@@ -15,16 +15,22 @@ accept(#control{module=element_command,
     wf:set(Target, Fill);
 
 accept(#control{module=element_command,
+        model={{multi, HostNodeTuples}, CommandName, FuncName, ArgData}}=Control) ->
+    [accept(Control#control{model={#app{host=Host, node=Node}, CommandName, FuncName, ArgData}})
+     || {Host, Node} <- HostNodeTuples];
+
+accept(#control{module=element_command,
         target=ResultTableId,
         trigger=submit,
-        model={App, CommandName, FuncName, ArgData}}) ->
+        model={#app{node=Node_}=App, CommandName, FuncName, ArgData}}) ->
+    Node = wf:to_list(Node_),
     Vals = [ apply_guards(wf:q(Id), Guards) || {Id, Guards} <- ArgData ],
     wf:wire(#show{target=ResultTableId}),
     RowId = wf:temp_id(),
     Input = "<pre><code>"++string:join([wf:f("~p", [X]) || X <- Vals], "\n")++"</code></pre>",
     StartTimestamp = human_now(),
     wf:insert_bottom(ResultTableId,
-        result_row(RowId, StartTimestamp, argo_util:spin(), "--", Input, "--")
+        result_row(RowId, Node, StartTimestamp, argo_util:spin(), "--", Input, "--")
     ),
     wf:comet(fun() ->
                 Tick = now(),
@@ -36,23 +42,24 @@ accept(#control{module=element_command,
                         Tock = now(),
                         Exec = timer:now_diff(Tock, Tick),
                         PreResult = ["<pre><code>", wf:f("~p", [Result]), "</code></pre>"],
-                        wf:replace(RowId, result_row(RowId, StartTimestamp, Exec div 1000, Key, Input, PreResult)),
+                        wf:replace(RowId, result_row(RowId, Node, StartTimestamp, Exec div 1000, Key, Input, PreResult)),
                         wf:flush();
                     {error, timeout} ->
-                        wf:replace(RowId,  result_row(RowId, StartTimestamp, "timeout ("++integer_to_list(Timeout)++")", Key, Input, "--")),
+                        wf:replace(RowId,  result_row(RowId, Node, StartTimestamp, "timeout ("++integer_to_list(Timeout)++")", Key, Input, "--")),
                         wf:flush();
                     E ->
                         ?ARGO(error, "command error ~p", [E]),
                         PreError = ["<pre><code>", wf:f("~p", [E]), "</code></pre>"],
-                        wf:replace(RowId, result_row(RowId, StartTimestamp, "error", Key, Input, PreError)),
+                        wf:replace(RowId, result_row(RowId, Node, StartTimestamp, "error", Key, Input, PreError)),
                         wf:flush()
                 end
         end);
 
 accept(_) -> false.
 
-result_row(RowId, Timestamp, Exec, Id, Input, Result) ->
+result_row(RowId, Node, Timestamp, Exec, Id, Input, Result) ->
     #tablerow{id=RowId, cells=[
+            #tablecell{body=Node},
             #tablecell{body=Timestamp},
             #tablecell{body=try integer_to_list(Exec) of S -> S catch _:_ -> Exec end},
             #tablecell{body=Id},

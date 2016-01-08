@@ -43,17 +43,13 @@ accept(#control{module=multi_eval,
 
 accept(_) -> false.
 
+multi_eval_receive_loop(RE, RE, _Timeout) ->
+    done;
 multi_eval_receive_loop(Received, Expected, Timeout) ->
     receive
         {ok, Target, Result} ->
             update_eval_result(Target, Result),
-            Received_ = Received + 1,
-            case Received_ of
-                Expected ->
-                    done;
-                _ ->
-                    multi_eval_receive_loop(Received+1, Expected, Timeout)
-            end;
+            multi_eval_receive_loop(Received+1, Expected, Timeout);
         _ ->
             multi_eval_receive_loop(Received, Expected, Timeout)
     after

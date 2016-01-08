@@ -134,6 +134,7 @@ render_result_table(Id) ->
     #table{id=Id, class="toshow table",
         header=#tablerow{
             cells=[
+                #tablecell{text="Node"},
                 #tablecell{text="Timestamp"},
                 #tablecell{text="Exec (msec)"},
                 #tablecell{text="Id"},

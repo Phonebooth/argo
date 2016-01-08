@@ -50,6 +50,7 @@ render_element(_Record = #app_panel{app=App}) ->
             [#event_monitor{}]
         ]}}.
 
+% Also called by controller_tag_panel.
 commands_container_element(App, RenderSupervisionTree) ->
     SupItem = case RenderSupervisionTree of
                   true ->
@@ -110,12 +111,77 @@ command_item(btn_group, Name, RenderContent) ->
     #button{class="btn btn-default", text=element_command:format_name(Name),
         postback=controller_main:updater('command-content', RenderContent)}.
 
+% Also called by controller_tag_panel.
+fill_commands_container({multi, HostNodeTuples}) ->
+    wf:comet(fun() ->
+        Self = self(),
+        F = fun
+                ({Host, Node}) ->
+                    S = fun() ->
+                            App = #app{host=Host, node=Node},
+                            case probe_cortex_for_commands(App) of
+                                {ok, Commands} ->
+                                    Self ! {ok, App, Commands};
+                                E ->
+                                    ?ARGO(error, "failed to probe for commands on ~p : ~p", [App, E])
+                            end
+                        end,
+                    Pid = erlang:spawn(S),
+                    ?ARGO(debug, "spawn command probe pid ~p", [Pid]),
+                    ok;
+                (Arg) ->
+                    ?ARGO(error, "invalid host node tuple ~p", [Arg]),
+                    {error, invalid}
+            end,
+        lists:foreach(F, HostNodeTuples),
+        Len = length(HostNodeTuples),
+        ?ARGO(debug, "probing for commands on ~p nodes", [Len]),
+        AllCommands = lists:flatten(multi_probe_receive_loop(0, Len, 30000, [])),
+        % Only show commands that are common for the set of nodes given.
+        {Names, _Details} = lists:unzip(AllCommands),
+        Unique = dedupe(Names),
+        ?ARGO(debug, "unique commands found ~p", [Unique]),
+        CommandItems = [
+            command_item(Name, #command{app={multi, HostNodeTuples}, name=Name, details=proplists:get_value(Name, AllCommands)})
+            || Name <- Unique
+        ],
+        [wf:insert_bottom('commands-list', X) || X <- CommandItems ],
+        wf:flush()
+    end);
 fill_commands_container(App) ->
     wf:comet(fun() ->
             Commands = render_commands(App),
             [wf:insert_bottom('commands-list', X) || X <- Commands ],
             wf:flush()
     end).
+
+multi_probe_receive_loop(RE, RE, _Timeout, AllCommands) ->
+    AllCommands;
+multi_probe_receive_loop(Received, Expected, Timeout, AllCommands) ->
+    receive
+        {ok, #app{}, Commands} ->
+            % NOTE: We assume that commands with the same name are identical.
+            multi_probe_receive_loop(Received+1, Expected, Timeout, [Commands|AllCommands]);
+        _ ->
+            multi_probe_receive_loop(Received, Expected, Timeout, AllCommands)
+    after
+        Timeout ->
+            ?ARGO(error, "only received ~p of ~p probe results within timeout ~p ms", [Received, Expected, Timeout]),
+            AllCommands
+    end.
+
+dedupe(L) ->
+    dedupe(lists:sort(L), []).
+
+dedupe([], Acc) ->
+    Acc;
+dedupe([E|Rest], Acc) ->
+    case lists:member(E, Acc) of
+        true ->
+            dedupe(Rest, Acc);
+        _ ->
+            dedupe(Rest, [E|Acc])
+    end.
 
 render_commands(App=#app{}) ->
     case probe_cortex_for_commands(App) of

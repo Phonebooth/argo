@@ -7,11 +7,13 @@
 -include("largo.hrl").
 -include("records.hrl").
 
-accept(#control{module=tag_panel_toggle_row, target={Host, Node}}) ->
-    do_toggle_row_state(Host, Node),
+accept(#control{module=tag_panel_toggle_row, target=Id, model={Host, Node}}) ->
+    NewState = get_checkbox_state(Id),
+    set_row_session_state(Host, Node, NewState),
     true;
-accept(#control{module=tag_panel_select_all_toggle, target=RowContext}) ->
-    toggle_row_state(RowContext),
+accept(#control{module=tag_panel_select_all_toggle, target=Id, model=RowContext}) ->
+    NewState = get_checkbox_state(Id),
+    set_row_state(RowContext, NewState),
     true;
 accept(#control{module=tag_panel_commands, target=RowContext}) ->
     F = fun
@@ -27,7 +29,8 @@ accept(#control{module=tag_panel_commands, target=RowContext}) ->
         _ ->
             HostNodeTuples = [{Host, Node} || {_, Host, Node} <- SelectedRows],
             Container = element_app_panel:commands_container_element({multi, HostNodeTuples}, false),
-            wf:update('tag-panel-command-container', Container)
+            wf:update('tag-panel-command-container', Container),
+            element_app_panel:fill_commands_container({multi, HostNodeTuples})
     end,
     true;
 accept(#control{module=tag_panel_open_app, target={Host, Node}}) ->
@@ -39,26 +42,24 @@ accept(#control{module=tag_panel_open_host, target=Host}) ->
 accept(_) ->
     false.
 
-toggle_row_state([]) ->
+set_row_state([], _Value) ->
     ok;
-toggle_row_state([{Id, Host, Node}|Rest]) ->
-    NewState = do_toggle_row_state(Host, Node),
-    wf:replace(Id, row_checkbox(Id, Host, Node, NewState)), 
-    toggle_row_state(Rest);
-toggle_row_state([_|Rest]) ->
-    toggle_row_state(Rest).
+set_row_state([{Id, Host, Node}|Rest], Value) ->
+    set_row_session_state(Host, Node, Value),
+    wf:replace(Id, row_checkbox(Id, Host, Node, Value)), 
+    set_row_state(Rest, Value);
+set_row_state([_|Rest], Value) ->
+    set_row_state(Rest, Value).
 
-% Returns the new state.
-do_toggle_row_state(Host, Node) ->
+set_row_session_state(Host, Node, Value) ->
     Target = {Host, Node},
-    case wf:state_default(Target, false) of
-        false ->
-            % value not set, set it
-            wf:state(Target, true),
+    wf:state(Target, Value).
+
+get_checkbox_state(Id) ->
+    case wf:q(Id) of
+        "on" ->
             true;
         _ ->
-            % value already set, unset it
-            wf:state(Target, false),
             false
     end.
 
@@ -100,10 +101,12 @@ render_app_elements(Target, []) ->
 render_app_elements(Target, R_) ->
     R = lists:sort(R_),
     {RowContext, Rows_} = render_app_rows(R, [], []),
+    AllId = wf:temp_id(),
     HeaderRow = #tablerow{cells=[
         #tableheader{body=[
-            #checkbox{checked=false,
-                      postback=#control{module=tag_panel_select_all_toggle, target=RowContext}}
+            #checkbox{id=AllId,
+                      checked=false,
+                      postback=#control{module=tag_panel_select_all_toggle, target=AllId, model=RowContext}}
         ]},
         #tableheader{text="Host"},
         #tableheader{text="Node"}
@@ -152,4 +155,4 @@ row_checkbox(Id, Host, Node, Checked) ->
     #checkbox{id=Id,
               checked=Checked,
               label_position=none,
-              postback=#control{module=tag_panel_toggle_row, target={Host, Node}}}.
+              postback=#control{module=tag_panel_toggle_row, target=Id, model={Host, Node}}}.
