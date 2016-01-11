@@ -37,5 +37,7 @@ init([]) ->
     {ok, { {one_for_one, 5, 10},
             [?CHILD(cortex_events_sup, supervisor),
              ?CHILD(cortex_event_monitor, worker),
-             ?CHILD(nitrogen_test_svr, worker)]
+             ?CHILD(nitrogen_test_svr, worker),
+             ?CHILD(host_history_reaper, worker)
+            ]
         } }.
