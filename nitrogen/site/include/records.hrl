@@ -19,11 +19,32 @@
         modal_id,
         label,
         modal_title,
-        body
+        submit,
+        body_id,
+        body,
+        postback
     }).
 -record(btn_launch_modal, {?ELEMENT_BASE(element_btn_launch_modal),
         target,
-        body
+        body,
+        postback
+    }).
+
+-record(button2, {?ELEMENT_BASE(element_button2),
+        text=""                 :: text(),
+        body=""                 :: body(),
+        image=undefined         :: undefined | url(),
+        html_encode=true        :: html_encode(),
+        next                    :: id(),
+        click                   :: actions(),
+        enter_clicks=[]         :: [id()],
+        postback                :: term(),
+        disabled=false          :: boolean(),
+        handle_invalid=false    :: boolean(),
+        on_invalid              :: undefined | actions(),
+        delegate                :: module(),
+
+        attrs=[] :: list()
     }).
 
 -record(command, {?ELEMENT_BASE(element_command),

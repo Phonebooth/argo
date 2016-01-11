@@ -1,5 +1,5 @@
 -module(controller_command).
--export([accept/1]).
+-export([accept/1, argdata_to_args/1]).
 
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("argo.hrl").
@@ -15,6 +15,13 @@ accept(#control{module=element_command,
     wf:set(Target, Fill);
 
 accept(#control{module=element_command,
+        target=Target,
+        trigger=plan,
+        model={Cmd, Func, ResultTableId, ArgData}}) ->
+    Body = element_command:render_command_plan_body(Cmd, Func, ResultTableId, ArgData),
+    wf:update(Target, Body);
+
+accept(#control{module=element_command,
         model={{multi, HostNodeTuples}, CommandName, FuncName, ArgData}}=Control) ->
     [accept(Control#control{model={#app{host=Host, node=Node}, CommandName, FuncName, ArgData}})
      || {Host, Node} <- HostNodeTuples];
@@ -24,7 +31,7 @@ accept(#control{module=element_command,
         trigger=submit,
         model={#app{node=Node_}=App, CommandName, FuncName, ArgData}}) ->
     Node = wf:to_list(Node_),
-    Vals = [ apply_guards(wf:q(Id), Guards) || {Id, Guards} <- ArgData ],
+    Vals = argdata_to_args(ArgData),
     wf:wire(#show{target=ResultTableId}),
     RowId = wf:temp_id(),
     Input = "<pre><code>"++string:join([wf:f("~p", [X]) || X <- Vals], "\n")++"</code></pre>",
@@ -66,6 +73,9 @@ result_row(RowId, Node, Timestamp, Exec, Id, Input, Result) ->
             #tablecell{body=Input},
             #tablecell{body=Result}
         ]}.
+
+argdata_to_args(ArgData) ->
+    [ apply_guards(wf:q(Id), Guards) || {Id, Guards} <- ArgData ].
 
 apply_guards(Val, Guards) when is_list(Val) ->
     case lists:member(is_atom, Guards) of

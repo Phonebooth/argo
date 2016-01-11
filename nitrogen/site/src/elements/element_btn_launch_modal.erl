@@ -12,7 +12,9 @@
 reflect() -> record_info(fields, btn_launch_modal).
 
 -spec render_element(#btn_launch_modal{}) -> body().
-render_element(_Record = #btn_launch_modal{target=Target, body=Body}) ->
-    ["<button type=\"button\" class=\"btn btn-default\" data-toggle=\"modal\" data-target=\"#"++wf:to_list(Target)++"\">",
-      Body,
-      "</button>"].
+render_element(Record) ->
+    Target = Record#btn_launch_modal.target,
+    #button2{class="btn btn-default", body=Record#btn_launch_modal.body,
+        postback=Record#btn_launch_modal.postback, attrs=
+        [{'data-toggle', modal},
+         {'data-target', "#" ++ wf:to_list(Target)}]}.
