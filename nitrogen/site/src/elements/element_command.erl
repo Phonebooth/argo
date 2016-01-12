@@ -7,7 +7,8 @@
 -export([
     reflect/0,
     render_element/1,
-    format_name/1
+    format_name/1,
+    render_command_plan_body/4
 ]).
 
 -spec reflect() -> [atom()].
@@ -48,7 +49,7 @@ render_element(Command = #command{name=Name, details=Details, body=undefined}) -
                            "</code></pre>"]}
                ] ++ render_form(Command, Src),
     command_shell_panel(Name, Contents);
-render_element(_Record = #command{name=Name, body=Body}) ->
+render_element(_Record = #command{name=_Name, body=Body}) ->
     Body.
 
 % controller_app handles the dispatch of these controls
@@ -173,17 +174,66 @@ render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guar
             }}
     end.
 
-render_run_btn(#command{app=App, name=CommandName}, {FuncName, Arity}, ResultTableId, ArgData) ->
+render_run_btn(Cmd=#command{app=App, name=CommandName}, Func={FuncName, _Arity}, ResultTableId, ArgData) ->
+    ModalBodyId = wf:temp_id(),
+    ModalId = wf:temp_id(),
+    BtnBody = format_func_btn(Func),
+    FillPlan = #control{
+        module=?MODULE,
+        target=ModalBodyId,
+        trigger=plan,
+        model={Cmd, Func, ResultTableId, ArgData}
+    },
+    [#btn_launch_modal{target=ModalId, body=BtnBody, postback=FillPlan},
+        #modal{modal_id=ModalId,
+            modal_title="Command Plan",
+            submit=
+                #button2{class="col-sm-2 btn btn-primary",
+                    style="margin-bottom:4px;white-space: normal;",
+                    body=format_func_btn(Func),
+                    postback=#control{
+                        module=?MODULE,
+                        trigger=submit,
+                        target=ResultTableId,
+                        model={App, CommandName, FuncName, ArgData}
+                    },
+                    attrs=[{'data-dismiss', modal}]},
+            body_id=ModalBodyId,
+            body=[]}
+        ].
+
+render_command_plan_body(Cmd=#command{}, Func, _ResultTableId, ArgData) ->
+    [#panel{body=["<pre><code>",
+                format_command_plan_plaintext(Cmd, Func, ArgData),
+                "</code></pre>"]}
+    ].
+
+format_command_plan_plaintext(Cmd=#command{app=App}, Func, ArgData) ->
+    HostNodeTuples = case App of
+        {multi, HNT} ->
+            HNT;
+        #app{host=Host, node=Node} ->
+            [{Host, Node}]
+    end,
+    ?PRINT(HostNodeTuples),
+    Rows = [ format_command_plan_single_host(Cmd#command{app=#app{host=Host,node=Node}}, Func, ArgData) ||
+                        {Host, Node} <- HostNodeTuples],
+    Cols = [node, command, function, args],
+    [ [X,<<"\n">>] || X <- pt_table:format(Cols, Rows) ].
+
+format_command_plan_single_host(#command{app=#app{host=Host, node=Node}, name=CmdName}, {FuncName, Arity}, ArgData) ->
+    [{host, fmt("~s", [Host])},
+     {node, fmt("~p", [Node])},
+     {command, fmt("~p", [CmdName])},
+     {function, fmt("~p/~p", [FuncName, Arity])},
+     {args, fmt("~p", [controller_command:argdata_to_args(ArgData)])}].
+
+fmt(F, A) ->
+    iolist_to_binary(io_lib:format(F, A)).
+
+format_func_btn({FuncName, Arity}) ->
     FuncBtn = format_name(FuncName),
-    #button{class="col-sm-2 btn btn-primary",
-        style="margin-bottom:4px;white-space: normal;",
-        body=[FuncBtn, "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}],
-        postback=#control{
-            module=?MODULE,
-            trigger=submit,
-            target=ResultTableId,
-            model={App, CommandName, FuncName, ArgData}
-        }}.
+    [FuncBtn, "&nbsp;", #span{class="badge", body=integer_to_list(Arity)}].
 
 format_name(A) when is_atom(A) ->
     format_name(atom_to_list(A));

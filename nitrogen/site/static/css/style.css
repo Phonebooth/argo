@@ -178,3 +178,7 @@ body {
 .wfid_tag-panel-command-container {
     padding: 20px 5px 5px 5px;
 }
+
+body .modal-dialog {
+    width: 70%; /* either % (e.g. 60%) or px (400px) */
+}
