@@ -148,7 +148,7 @@ fill_commands_container({multi, HostNodeTuples}) ->
         NameSets = lists:map(fun sets:from_list/1, Names),
         Unique = sets:to_list(sets:intersection(NameSets)),
         ?ARGO(debug, "unique commands found ~p", [Unique]),
-        AllCommands2 = lists:flatten(AllCommands),
+        AllCommands2 = filter_commands(lists:flatten(AllCommands), []),
         CommandItems = [
             command_item(Name, #command{app={multi, HostNodeTuples}, name=Name, details=proplists:get_value(Name, AllCommands2)})
             || Name <- Unique
@@ -181,7 +181,8 @@ multi_probe_receive_loop(Received, Expected, Timeout, AllCommands) ->
 render_commands(App=#app{}) ->
     case probe_cortex_for_commands(App) of
         {ok, Commands} ->
-            [ command_item(X, #command{app=App, name=X, details=Y}) || {X,Y} <- Commands ];
+            Commands2 = filter_commands(Commands, []),
+            [ command_item(X, #command{app=App, name=X, details=Y}) || {X,Y} <- Commands2 ];
         E ->
             ?ARGO(error, "failed to probe for commands ~p", [E]),
             []
@@ -208,7 +209,7 @@ probe_cortex_for_commands(Host) ->
 
 filter_commands([], Accum) ->
     lists:reverse(Accum);
-filter_commands([Cmd=#command{name=Name}|Cmds], Accum) ->
+filter_commands([Cmd={Name, _Details}|Cmds], Accum) ->
     case command_display_options:hide(Name) of
         true ->
             filter_commands(Cmds, Accum);
