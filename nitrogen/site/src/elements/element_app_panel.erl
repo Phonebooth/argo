@@ -52,6 +52,12 @@ render_element(_Record = #app_panel{app=App}) ->
 
 % Also called by controller_tag_panel.
 commands_container_element(App, RenderSupervisionTree) ->
+    EvalItem = case command_display_options:hide(eval) of
+        true ->
+            [];
+        false ->
+            [command_item("eval", #command{name=eval, app=App})]
+    end,
     SupItem = case RenderSupervisionTree of
                   true ->
                       [command_item("supervision tree", #command{name=supervision_tree, app=App})];
@@ -60,7 +66,7 @@ commands_container_element(App, RenderSupervisionTree) ->
               end,
     #panel{class="container-fluid", body=[
         command_container(
-                [command_item("eval", #command{name=eval, app=App})] ++
+                EvalItem ++
                 SupItem
             ),
         #panel{class="row", id='command-content'}
@@ -105,7 +111,7 @@ command_container(btn_group, Body) ->
     #btn_group{id='commands-list', body=Body}.
 
 command_item(list, Name, RenderContent) ->
-    #expand_listitem{link=element_command:format_udnerscores(Name),
+    #expand_listitem{link=element_command:format_name(Name),
         body=RenderContent};
 command_item(btn_group, Name, RenderContent) ->
     #button{class="btn btn-default", text=element_command:format_name(Name),
@@ -136,13 +142,15 @@ fill_commands_container({multi, HostNodeTuples}) ->
         lists:foreach(F, HostNodeTuples),
         Len = length(HostNodeTuples),
         ?ARGO(debug, "probing for commands on ~p nodes", [Len]),
-        AllCommands = lists:flatten(multi_probe_receive_loop(0, Len, 30000, [])),
+        AllCommands = multi_probe_receive_loop(0, Len, 30000, []),
+        Names = [ element(1, lists:unzip(X)) || X <- AllCommands ],
         % Only show commands that are common for the set of nodes given.
-        {Names, _Details} = lists:unzip(AllCommands),
-        Unique = dedupe(Names),
+        NameSets = lists:map(fun sets:from_list/1, Names),
+        Unique = sets:to_list(sets:intersection(NameSets)),
         ?ARGO(debug, "unique commands found ~p", [Unique]),
+        AllCommands2 = lists:flatten(AllCommands),
         CommandItems = [
-            command_item(Name, #command{app={multi, HostNodeTuples}, name=Name, details=proplists:get_value(Name, AllCommands)})
+            command_item(Name, #command{app={multi, HostNodeTuples}, name=Name, details=proplists:get_value(Name, AllCommands2)})
             || Name <- Unique
         ],
         [wf:insert_bottom('commands-list', X) || X <- CommandItems ],
@@ -168,19 +176,6 @@ multi_probe_receive_loop(Received, Expected, Timeout, AllCommands) ->
         Timeout ->
             ?ARGO(error, "only received ~p of ~p probe results within timeout ~p ms", [Received, Expected, Timeout]),
             AllCommands
-    end.
-
-dedupe(L) ->
-    dedupe(lists:sort(L), []).
-
-dedupe([], Acc) ->
-    Acc;
-dedupe([E|Rest], Acc) ->
-    case lists:member(E, Acc) of
-        true ->
-            dedupe(Rest, Acc);
-        _ ->
-            dedupe(Rest, [E|Acc])
     end.
 
 render_commands(App=#app{}) ->
@@ -210,3 +205,14 @@ probe_cortex_for_commands(Host) ->
         E ->
             E
     end.
+
+filter_commands([], Accum) ->
+    lists:reverse(Accum);
+filter_commands([Cmd=#command{name=Name}|Cmds], Accum) ->
+    case command_display_options:hide(Name) of
+        true ->
+            filter_commands(Cmds, Accum);
+        _ ->
+            filter_commands(Cmds, [Cmd|Accum])
+    end.
+

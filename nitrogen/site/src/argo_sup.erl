@@ -33,6 +33,7 @@ init([]) ->
     ets:new(global_comet_pools, [public, named_table]),
     ets:new(app_reachability, [public, named_table]),
     cortex_event_monitor:init_tables(),
+    command_display_options:init(),
 
     {ok, { {one_for_one, 5, 10},
             [?CHILD(cortex_events_sup, supervisor),
