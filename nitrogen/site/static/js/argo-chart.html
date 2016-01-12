@@ -135,6 +135,12 @@
                 }
                 this.x.domain(xext);
             }
+            else {
+                // slice the data to begin at the start of our x extent
+                var bisect = d3.bisector(function(d) { return d.timestamp; }).left;
+                var temp = bisect(data, this.x.domain()[0]);
+                data = data.slice(temp);
+            }
 
             // special handling for constant values that do not render nicely
             var yext = d3.extent(data, function(d) { return d.value; });
@@ -253,7 +259,7 @@
         proto.toggleFormat = function() {
             switch (this.getAttribute('value-format')) {
                 case "%":
-                    this.setAttribute('value-format', "");
+                    this.setAttribute('value-format', "s");
                     break;
                 default:
                     this.setAttribute('value-format', "%");
@@ -264,6 +270,9 @@
 
         proto.configureYAxis = function() {
             var valueFormat = this.getAttribute('value-format');
+            if (valueFormat == "") {
+                valueFormat = "s";
+            }
             this.yAxis = d3.svg.axis()
                 .scale(this.y)
                 .orient('left')
@@ -273,9 +282,8 @@
         proto.configureWindow = function() {
             if (this.xwindow == "moving") {
                 var now = Date.now(); // ms
-                var half = this.windowSize / 2;
-                var t0 = new Date(now - half);
-                var t1 = new Date(now + half);
+                var t0 = new Date(now - this.windowSize);
+                var t1 = new Date(now + (this.windowSize * 0.05));
                 this.x.domain([t0, t1]);
             }
         };
