@@ -38,12 +38,13 @@ run() ->
 %% gen_server.
 
 init([]) ->
-    Interval = case application:get_env(nitrogen, history_reaper_interval) of
+    Interval_ = case application:get_env(nitrogen, history_reaper_interval) of
                    {ok, I} when is_integer(I) ->
-                       I * 1000;
+                       I;
                    _ ->
                        ?DefaultInterval
                end,
+    Interval = Interval_ * 1000,
     TRef = case timer:send_interval(Interval, {run_timer}) of
                {ok, T} ->
                    ?ARGO(info, "host_history_reaper will run every ~p seconds", [Interval div 1000]),
