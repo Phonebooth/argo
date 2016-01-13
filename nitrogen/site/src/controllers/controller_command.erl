@@ -69,7 +69,7 @@ result_row(RowId, Node, Timestamp, Exec, Id, Input, Result) ->
             #tablecell{body=Node},
             #tablecell{body=Timestamp},
             #tablecell{body=try integer_to_list(Exec) of S -> S catch _:_ -> Exec end},
-            #tablecell{body=Id},
+            %#tablecell{body=Id},
             #tablecell{body=Input},
             #tablecell{body=Result}
         ]}.

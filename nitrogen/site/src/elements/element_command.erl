@@ -28,19 +28,18 @@ render_element(_Record = #command{name=eval, app=App}) ->
                 ]}] ++
             eval_result_panels(EvalTarget, App)
         }],
-    command_shell_panel("Eval", Contents);
+    command_shell_panel("Eval", undefined, Contents);
 render_element(_Record = #command{name=supervision_tree, app=App}) ->
     fill_supervision_tree(App),
     Contents = [#panel{class="col-sm-11 col-1-offset", body=[
                 #list{id=supervision_tree, body=argo_util:spin()}
         ]}],
-    command_shell_panel("Supervision Tree", Contents);
+    command_shell_panel("Supervision Tree", undefined, Contents);
 render_element(Command = #command{name=Name, details=Details, body=undefined}) ->
     %default command rendering
     ModalId = wf:temp_id(),
     Src = proplists:get_value(src, Details),
     Contents = [#panel{body=["<small>","Last Updated: ",proplists:get_value(last_updated, Details),"</small>"]},
-                #p{}, #btn_launch_modal{target=ModalId, body="View Source"}, #p{},
                 #modal{modal_id=ModalId,
                        label="viewSourceLabel",
                        modal_title="View Source - " ++ wf:to_list(Name),
@@ -48,7 +47,7 @@ render_element(Command = #command{name=Name, details=Details, body=undefined}) -
                            Src,
                            "</code></pre>"]}
                ] ++ render_form(Command, Src),
-    command_shell_panel(Name, Contents);
+    command_shell_panel(Name, ModalId, Contents);
 render_element(_Record = #command{name=_Name, body=Body}) ->
     Body.
 
@@ -82,12 +81,18 @@ eval_result_panels(TargetIds, {multi, HostNodeTuples}) ->
         ] || {Id, {Host, Node}} <- L
     ]).
 
-command_shell_panel(Name, Contents) ->
+command_shell_panel(Name, ViewSourceId, Contents) ->
     Id = wf:temp_id(),
     #panel{id=Id, class="panel panel-default command-shell-panel", body=[
-        #panel{class="panel-heading", body=[
-            #strong{body=format_name(Name)},
-            #button{class="close",
+        #panel{class="panel-heading", body=
+            [#strong{body=format_name(Name)}]
+              ++
+            case ViewSourceId of undefined -> []; _ ->
+                    ["&nbsp;&nbsp;&nbsp;&nbsp;",
+                        #btn_launch_modal{class="btn btn-default btn-xs", target=ViewSourceId, body=[glyph:icon('grain'), " View Source"]}]
+            end
+             ++
+            [#button{class="close",
                     click=#remove{target=Id},
                     body=[#span{text="x"}]}]},
         #panel{class="panel-body", body=Contents}
@@ -96,27 +101,60 @@ command_shell_panel(Name, Contents) ->
 render_form(Command, Src) ->
     {ModuleComments, RunFuncs} = cortex_command_fsm:parse(Src),
     render_comments(ModuleComments) ++ 
-    lists:map(fun(X) -> render_func(Command, X) end, RunFuncs).
+    lists:map(fun(X) -> render_func(Command, X, length(RunFuncs)) end, RunFuncs).
 
-render_func(Command, #run_func{comments=Comments, name=FuncName, arity=Arity, vars=Vars}) ->
+render_func(Command, #run_func{comments=Comments, name=FuncName, arity=Arity, vars=Vars}, NumFuncs) ->
     RVars = lists:map(fun(X) -> render_var(Command, X) end, Vars),
     {ArgIds, ArgGuards, VarHtml} = lists:unzip3(RVars),
     NumVars = length(Vars),
     FuncCol = 2,
     TotalCols = 12,
     VarsCols = TotalCols - FuncCol,
-    ColsPerVar = case NumVars of 0 -> VarsCols; _ -> VarsCols div NumVars end,
+    ColsPerVar = lists:min([4,case NumVars of 0 -> VarsCols; _ -> VarsCols div NumVars end]),
+    ShowId = wf:temp_id(),
     ResultTableId = wf:temp_id(),
-    #panel{class="panel panel-default", body=[
-        #panel{class="panel-body", body=
-            [#h4{body=format_name(FuncName)}] ++
-            [render_comments(Comments)] ++
-            [render_run_btn(Command, {FuncName, Arity}, ResultTableId, lists:zip(ArgIds, ArgGuards))]
-            ++ [ #panel{class="col-sm-"++integer_to_list(ColsPerVar), body=X} || X <- VarHtml ]
-            },
-            render_result_table(ResultTableId)
-        ]
+    DefaultState = if NumFuncs > 1 -> collapse; true -> expand end,
+    #panel{body=[
+        #panel{body=
+            [render_command_func_header({FuncName, Arity}, ShowId, DefaultState)] ++
+            [
+                #panel{class=case DefaultState of collapse -> "toshow"; _ -> "" end, id=ShowId, body=
+                    [ render_comments(Comments) ] ++
+                    [ #panel{class="form-group form-group-sm", body=
+                            [ #panel{class="col-sm-"++integer_to_list(ColsPerVar), body=X} || X <- VarHtml ] ++
+                            [ render_run_btn(Command, {FuncName, Arity}, ResultTableId, lists:zip(ArgIds, ArgGuards))]
+                        } ] ++
+                    [ render_result_table(ResultTableId) ]
+                }
+            ]
+        }]
     }.
+
+render_command_func_header(Func, ShowId, DefaultState) ->
+    CollapseId = wf:temp_id(),
+    ExpandId = wf:temp_id(),
+    {ExpandClass, CollapseClass} = case DefaultState of
+        collapse ->
+            {"", "toshow"};
+        expand ->
+            {"toshow", ""}
+    end,
+      #h4{body=[
+            #span{id=ExpandId, class=ExpandClass, body=glyph:icon('collapse-down'),
+                actions=[
+                    #event{target=ShowId, type=click, actions=#slide_down{speed=100}},
+                    #event{target=ExpandId, type=click, actions=#toggle{}},
+                    #event{target=CollapseId, type=click, actions=#toggle{}}
+                ]},
+            #span{id=CollapseId, class=CollapseClass, body=glyph:icon('collapse-up'),
+                actions=[
+                    #event{target=ShowId, type=click, actions=#slide_up{speed=100}},
+                    #event{target=ExpandId, type=click, actions=#toggle{}},
+                    #event{target=CollapseId, type=click, actions=#toggle{}}
+                ]},
+            " ",
+            format_func_btn(Func)
+        ]}.
 
 render_comments([]) ->
     [];
@@ -132,13 +170,13 @@ render_comments(Comments) ->
     "<p>" ++ lists:flatten(lists:reverse(FoldRes)) ++ "</p>".
 
 render_result_table(Id) ->
-    #table{id=Id, class="toshow table",
+    #table{id=Id, class="toshow table table-bordered table-hover",
         header=#tablerow{
             cells=[
                 #tablecell{text="Node"},
                 #tablecell{text="Timestamp"},
                 #tablecell{text="Exec (msec)"},
-                #tablecell{text="Id"},
+                %#tablecell{text="Id"},
                 #tablecell{text="Input"},
                 #tablecell{text="Result"}
             ]
@@ -149,8 +187,8 @@ render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guar
     Src = proplists:get_value(src, Details),
     Suggestions = cortex_command_suggestions:get(CommandName, Name, Src, VarSuggest),
     Textbox = #textbox{id=Id,
-        class="form-control",
-        placeholder=io_lib:format("~w", [Guards])},
+        class="form-control input-sm",
+        placeholder=io_lib:format("~p", [render_guard_placeholder(Guards)])},
     case Suggestions of
         [] ->
             {Id, Guards, #panel{class="input-group", body=[
@@ -174,6 +212,13 @@ render_var(#command{name=CommandName, details=Details}, #run_var{name=Name, guar
             }}
     end.
 
+render_guard_placeholder([is_atom|_]) -> atom;
+render_guard_placeholder([is_binary|_]) -> string;
+render_guard_placeholder([is_list|_]) -> ["list", 'of', {"Erlang", terms}];
+render_guard_placeholder([is_integer|_]) -> integer;
+render_guard_placeholder([is_float|_]) -> float;
+render_guard_placeholder(Guards) -> Guards.
+
 render_run_btn(Cmd=#command{app=App, name=CommandName}, Func={FuncName, _Arity}, ResultTableId, ArgData) ->
     ModalBodyId = wf:temp_id(),
     ModalId = wf:temp_id(),
@@ -184,20 +229,18 @@ render_run_btn(Cmd=#command{app=App, name=CommandName}, Func={FuncName, _Arity},
         trigger=plan,
         model={Cmd, Func, ResultTableId, ArgData}
     },
-    [#btn_launch_modal{target=ModalId, body=BtnBody, postback=FillPlan},
+    Submit = #control{
+        module=?MODULE,
+        trigger=submit,
+        target=ResultTableId,
+        model={App, CommandName, FuncName, ArgData}
+    },
+    PlanBtn = #btn_launch_modal{target=ModalId, class="btn btn-default btn-sm", body=[glyph:icon('tasks'), " Plan"], postback=FillPlan},
+    RunBtn = #button2{class="btn btn-primary btn-sm", body=[glyph:icon('play-circle'), " Run"], postback=Submit},
+    [   #btn_group{class="col-sm-2", body=[PlanBtn, RunBtn]},
         #modal{modal_id=ModalId,
             modal_title="Command Plan",
-            submit=
-                #button2{class="col-sm-2 btn btn-primary",
-                    style="margin-bottom:4px;white-space: normal;",
-                    body=format_func_btn(Func),
-                    postback=#control{
-                        module=?MODULE,
-                        trigger=submit,
-                        target=ResultTableId,
-                        model={App, CommandName, FuncName, ArgData}
-                    },
-                    attrs=[{'data-dismiss', modal}]},
+            submit=RunBtn#button2{attrs=[{'data-dismiss', modal}]},
             body_id=ModalBodyId,
             body=[]}
         ].

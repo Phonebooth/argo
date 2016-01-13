@@ -17,7 +17,7 @@ render_element(_Record = #input_group_btn_drop{label=Label,
     textbox=Textbox}) ->
     #panel{class="input-group", body=[
         #panel{class="input-group-btn", body=[
-                "<button type=\"button\" class=\"btn btn-default dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\">",
+                "<button type=\"button\" class=\"btn btn-default btn-sm dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\">",
                     wf:to_list(Label),"&nbsp;",#span{class="caret"},"</button>",
                     #list{class="dropdown-menu", body=
                         element_btn_drop:render_links(Links, [])

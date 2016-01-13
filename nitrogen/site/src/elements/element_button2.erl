@@ -16,7 +16,6 @@ render_element(Record) ->
     case Record#button2.postback of
         undefined -> ignore;
         Postback ->
-            ?PRINT(Postback),
             wf:wire(Anchor, #event {
                 type=click,
                 validation_group=ID,

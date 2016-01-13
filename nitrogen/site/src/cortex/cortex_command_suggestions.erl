@@ -2,7 +2,7 @@
 
 -export([get/4, get_nodes/0]).
 
-get(iswitch_node_offline, 'Node', _Src, []) ->
+get(ctxcmd_iswitch_node_offline, 'Node', _Src, []) ->
     get_nodes();
 get(_, _, _, VarSuggest) ->
     VarSuggest.
