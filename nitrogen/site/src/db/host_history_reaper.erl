@@ -100,16 +100,10 @@ do_run() ->
             (_, Acc) ->
                 Acc
         end,
-    {Total, ToDelete} = transaction(fun() -> mnesia:foldl(F, {0, []}, host_history) end),
+    {Total, ToDelete} = host_history:foldl(F, {0, []}),
     ?ARGO(info, "deleting ~p of ~p records", [length(ToDelete), Total]),
-    [delete_record(Id) || Id <- ToDelete],
+    host_history:delete_list(ToDelete),
     ok.
-
-delete_record(Id) ->
-    T = fun() ->
-                mnesia:delete({host_history, Id})
-        end,
-    transaction(T).
 
 get_cutoff_timestamp() ->
     MaxAgeSeconds = case application:get_env(nitrogen, history_max_age) of
@@ -121,18 +115,3 @@ get_cutoff_timestamp() ->
     {A, B, _} = os:timestamp(),
     Now = (A * 1000000) + B,
     (Now - MaxAgeSeconds) * 1000.
-
-% borrowed from mnesia_utils
-transaction(F) ->
-    transaction(transaction, F, mnesia_frag).
-
-%transaction(AccessContext, F) ->
-%    transaction(AccessContext, F, mnesia_frag).
-
-transaction(AccessContext, F, ActivityModule) ->
-    case catch(mnesia:activity(AccessContext, F, [], ActivityModule)) of
-        {_, {aborted, Reason}} ->
-            ?ARGO(error, "mnesia transaction has aborted ~p~p~n", [F, Reason]);
-        Result ->
-            Result
-    end.

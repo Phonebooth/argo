@@ -34,14 +34,11 @@ render_element(_Record = #eventlog{id=Id}) ->
           ]}.
 
 load_history() ->
-    case host_history:get_history() of
+    case host_history:get_since(0, 100) of
         [] ->
             [];
         History when is_list(History) ->
-            BufferLen = 100,
-            NTail = lists:max([0, length(History) - BufferLen]),
-            Trunc = lists:nthtail(NTail, History),
             lists:map(fun(#host_history{type=Type, timestamp=Timestamp, data=Data}) ->
                         #history_item{type=Type, timestamp=Timestamp, data=Data}
-                end, Trunc)
+                end, History)
     end.
