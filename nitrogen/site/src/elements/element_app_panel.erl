@@ -121,6 +121,8 @@ command_item(btn_group, Name, RenderContent) ->
 fill_commands_container({multi, HostNodeTuples}) ->
     wf:comet(fun() ->
         Self = self(),
+        % TODO - these gymnastics should not be necessary. The command API provides an async
+        % yield
         F = fun
                 ({Host, Node}) ->
                     S = fun() ->

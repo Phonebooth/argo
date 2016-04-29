@@ -55,7 +55,7 @@ get_since(Timestamp, Limit) ->
     Fold = fun
         (#host_history{timestamp=TS}, Q) when TS < Timestamp ->
             Q;
-        (HH=#host_history{timestamp=TS}, Q) ->
+        (HH=#host_history{timestamp=_TS}, Q) ->
             Q2 = case queue:len(Q) of
                 Len when Len >= Limit ->
                     queue:drop(Q);

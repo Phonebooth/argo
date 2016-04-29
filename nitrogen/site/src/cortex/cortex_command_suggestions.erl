@@ -1,10 +1,12 @@
 -module(cortex_command_suggestions).
 
 -export([get/4, get_nodes/0]).
+-include_lib("nitrogen_core/include/wf.hrl").
 
 get(ctxcmd_iswitch_node_offline, 'Node', _Src, []) ->
     get_nodes();
-get(_, _, _, VarSuggest) ->
+get(_A, _B, _C, VarSuggest) ->
+    ?PRINT({_A, _B, _C, VarSuggest}),
     VarSuggest.
 
 get_nodes() ->
