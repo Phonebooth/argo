@@ -10,7 +10,7 @@ main() ->
     argo_context:init(),
     #template { file="./site/templates/bare.html" }.
 
-title() -> "Welcome to Argo".
+title() -> "Argo".
 
 sidebar() ->
     wf:comet(fun() ->

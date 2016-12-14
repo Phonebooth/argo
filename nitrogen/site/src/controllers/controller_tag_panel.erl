@@ -27,6 +27,9 @@ accept(#control{module=tag_panel_commands, target=RowContext}) ->
         0 ->
             wf:update('tag-panel-command-container', #strong{text="No apps selected..."});
         _ ->
+            lists:foreach(fun({Id, _Host, _Node}) ->
+                        wf:disable(Id)
+                end, RowContext),
             HostNodeTuples = [{Host, Node} || {_, Host, Node} <- SelectedRows],
             Container = element_app_panel:commands_container_element({multi, HostNodeTuples}, false),
             wf:update('tag-panel-command-container', Container),
